@@ -16,11 +16,14 @@ Design: Figma https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy (páginas Foun
 ## Comandos
 ```
 npm run db:up        # Postgres via Docker
+npm run storage:up   # storage S3 local (RustFS) da foto de capa
+npm run storage:init # cria o bucket e libera leitura pública
 npm run db:init      # 1ª vez: cria a migração init + constraints customizadas e aplica
 npm run db:migrate   # novas migrações
 npm run db:seed      # dados demo (joao@demo.com / barber123)
 npm run dev
 npm run typecheck && npm run lint && npm test
+# integração: DATABASE_URL_TEST=postgresql://…/<nome>_test e S3_TEST_ENDPOINT=http://localhost:9300 antes do npm test
 ```
 
 ## Arquitetura (monólito modular — PRD §6/§7)

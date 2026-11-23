@@ -16,6 +16,8 @@ cd C:\Capivara\barber-saas
 copy .env.example .env          # depois edite AUTH_SECRET (npx auth secret)
 npm install                     # também roda "prisma generate"
 npm run db:up                   # sobe o Postgres no Docker
+npm run storage:up              # sobe o storage S3 (RustFS) da foto de capa
+npm run storage:init            # cria o bucket e libera leitura pública
 npm run db:init                 # cria a migração inicial + constraints e aplica
 npm run db:seed                 # Barbearia do João (joao@demo.com / barber123)
 npm run dev                     # http://localhost:3000
@@ -27,6 +29,8 @@ Páginas para testar: `/` · `/login` · `/barbearia-do-joao` · `/painel/agenda
 |---|---|
 | `npm run dev` | servidor de desenvolvimento (Turbopack) |
 | `npm run typecheck` / `lint` / `test` | TypeScript, ESLint, Vitest |
+| `npm test` com `DATABASE_URL_TEST` e `S3_TEST_ENDPOINT` | inclui os testes de integração (Postgres `*_test` e storage S3) |
+| `npm run storage:up` / `storage:init` | storage S3 local (RustFS) e criação do bucket |
 | `npm run test:e2e` | Playwright (perfil mobile) |
 | `npm run db:migrate` | nova migração após mudar o `schema.prisma` |
 | `npm run db:studio` | Prisma Studio |
@@ -51,6 +55,7 @@ Copie o `whsec_...` para `STRIPE_WEBHOOK_SECRET`.
 
 ## Deploy (Coolify)
 Build pelo `Dockerfile` (saída `standalone`). Comando de pré-deploy: `npx prisma migrate deploy`.
+Foto de capa: crie um bucket S3 compatível com leitura pública (ex.: Cloudflare R2) e defina as variáveis `S3_*` (veja `.env.example`).
 Agende um cron a cada minuto: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://SEU_DOMINIO/api/jobs/process-outbox`.
 
 ## Status
@@ -58,5 +63,7 @@ Pronto: schema multitenant com FKs compostas e exclusion constraint, motor de di
 casos de uso de agendamento/cancelamento, API pública, Auth.js, Stripe (checkout + webhook idempotente),
 outbox + Web Push, PWA, tokens do design system, telas base (login, cadastro, agenda, página pública).
 
-Próximos passos: fluxo completo de agendamento (telas C2–C7), CRUD de serviços/equipe/horários (P3–P7),
-testes de isolamento multitenant com banco.
+Também pronto: fluxo completo de agendamento e cancelamento na página pública (telas C1–C7), link de
+agendamento gerado no cadastro, foto de capa da barbearia (storage S3).
+
+Próximos passos: CRUD de serviços/equipe/horários (P3–P7), testes de isolamento multitenant com banco.

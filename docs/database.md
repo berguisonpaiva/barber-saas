@@ -57,4 +57,5 @@ Violação da EXCLUDE retorna SQLSTATE `23P01`, convertida em `SlotUnavailableEr
 | `npm run db:migrate` | Novas migrações após alterar o schema |
 | `npm run db:seed` | Dados demo (joao@demo.com / barber123) |
 | `npm run db:studio` | Prisma Studio |
+| `npm test` com `DATABASE_URL_TEST` | Testes de integração; o banco precisa terminar em `_test` (o schema é recriado a cada execução) |
 | `npm run db:deploy` | Produção (`prisma migrate deploy`) |

@@ -11,7 +11,7 @@ import { getBookingLink } from "@/modules/tenants/application/use-cases/get-book
 
 export const metadata: Metadata = { title: "Mais" };
 
-// TODO(P8): link público, assinatura, regras de agendamento, dados da barbearia.
+// TODO(P8): assinatura, regras de agendamento, demais dados da barbearia (nome, endereço, fuso).
 export default function MaisPage() {
   return (
     <main className="flex flex-col gap-6 px-6 pt-6">

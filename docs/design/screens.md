@@ -13,20 +13,20 @@ Formato: iPhone 390 × 844, tema Dark. Para navegar, abra o modo apresentação 
 
 | Tela | Figma | Conteúdo | Requisitos | Rota no código |
 |---|---|---|---|---|
-| C1 · Página da barbearia | [16:11](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-11) | Hero com foto, endereço, "Aberto agora", lista de serviços, CTA com total | RF-08 | `/[slug]` ✅ (sem fluxo) |
-| C2 · Escolher profissional | [16:144](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-144) | Stepper 2/4, resumo do serviço, profissionais com próximo horário | RF-09 | ⏳ |
-| C3 · Data e horário | [16:228](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-228) | Faixa de datas, horários manhã/tarde, aviso de fuso, resumo no rodapé | RF-09, RN-04 | ⏳ (API pronta) |
-| C4 · Seus dados | [16:330](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-330) | Nome, WhatsApp (+55), consentimento LGPD, total | RF-10 | ⏳ (API pronta) |
-| C5 · Comprovante | [17:213](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=17-213) | Confirmação, detalhes, código da reserva, adicionar ao calendário, cancelar | RF-10, RN-06 | ⏳ |
-| C6 · Cancelar (link seguro) | [17:289](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=17-289) | Dados do agendamento, política de cancelamento, confirmar/manter | RF-12, RN-08 | `/[slug]/cancelar` (stub) |
-| C7 · Cancelamento concluído | [17:373](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=17-373) | Confirmação e "Agendar novo horário" | RF-12 | ⏳ |
+| C1 · Página da barbearia | [16:11](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-11) | Hero com foto, endereço, "Aberto agora", lista de serviços, CTA com total | RF-08 | `/[slug]` ✅ (seleção de serviço + capa) |
+| C2 · Escolher profissional | [16:144](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-144) | Stepper 2/4, resumo do serviço, profissionais com próximo horário | RF-09 | `/[slug]` ✅ (fluxo) |
+| C3 · Data e horário | [16:228](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-228) | Faixa de datas, horários manhã/tarde, aviso de fuso, resumo no rodapé | RF-09, RN-04 | `/[slug]` ✅ (fluxo) |
+| C4 · Seus dados | [16:330](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=16-330) | Nome, WhatsApp (+55), consentimento LGPD, total | RF-10 | `/[slug]` ✅ (fluxo) |
+| C5 · Comprovante | [17:213](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=17-213) | Confirmação, detalhes, código da reserva, adicionar ao calendário, cancelar | RF-10, RN-06 | `/[slug]` ✅ (fluxo, .ics) |
+| C6 · Cancelar (link seguro) | [17:289](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=17-289) | Dados do agendamento, política de cancelamento, confirmar/manter | RF-12, RN-08 | `/[slug]/cancelar` ✅ |
+| C7 · Cancelamento concluído | [17:373](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=17-373) | Confirmação e "Agendar novo horário" | RF-12 | `/[slug]/cancelar` ✅ |
 
 ## 2 · Proprietário — onboarding
 
 | Tela | Figma | Conteúdo | Requisitos | Rota |
 |---|---|---|---|---|
 | O1 · Login | [17:391](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=17-391) | E-mail, senha, esqueci a senha, criar barbearia | RF-01 | `/login` ✅ |
-| O2 · Criar conta e barbearia | [18:326](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=18-326) | Dados do dono + nome e link (slug) da barbearia | RF-01, RF-02 | `/cadastro` ✅ |
+| O2 · Criar conta e barbearia | [18:326](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=18-326) | Dados do dono + nome da barbearia; o link é gerado (nome + sufixo) | RF-01, RF-02 | `/cadastro` ✅ |
 | O3 · Escolher plano | [18:394](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=18-394) | Plano Pro (destaque) e Solo, "Assinar com Stripe" | RF-03 | `/painel/assinatura` ✅ |
 | O4 · Confirmando assinatura | [18:458](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=18-458) | Aguardando webhook: checkout → pagamento → painel | RN-02 | `/painel/assinatura/confirmando` (stub) |
 | O5 · Primeiros passos | [18:492](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=18-492) | Checklist de configuração (6 passos) | — | ⏳ |
@@ -44,7 +44,7 @@ Formato: iPhone 390 × 844, tema Dark. Para navegar, abra o modo apresentação 
 | P5 · Equipe | [20:860](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-860) | Profissionais (sem login) | RF-05 | `/painel/equipe` (stub) |
 | P6 · Horários do profissional | [20:959](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-959) | Expediente semanal com intervalos | RF-06 | ⏳ |
 | P7 · Folgas e bloqueios | [21:873](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-873) | Exceções por data | RF-07 | ⏳ |
-| P8 · Mais | [21:967](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-967) | Link público, assinatura, notificações, regras, sair | — | `/painel/mais` (parcial) |
+| P8 · Mais | [21:967](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-967) | Link público, assinatura, notificações, regras, sair | — | `/painel/mais` (parcial: link, dados da barbearia → capa, notificações) |
 | P9 · Assinatura | [21:1127](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-1127) | Plano, status, próxima cobrança, aviso de pagamento pendente, portal Stripe | RN-02 | ⏳ |
 | P1 · Agenda (Light) | [21:1184](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-1184) | Demonstração do tema claro | — | `data-theme="light"` |
 
