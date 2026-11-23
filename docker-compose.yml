@@ -1,0 +1,47 @@
+# Desenvolvimento local: `npm run db:up` sobe só o Postgres.
+# Produção: Coolify usa o Dockerfile + um Postgres gerenciado.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: barber
+      POSTGRES_PASSWORD: barber
+      POSTGRES_DB: barber_saas
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barber -d barber_saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  storage:
+    image: rustfs/rustfs:1.0.2
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: barber
+      RUSTFS_SECRET_KEY: barber-storage
+    ports:
+      - "9300:9000"
+      - "9301:9001"
+    volumes:
+      - storagedata:/data
+
+  app:
+    profiles: ["app"] # docker compose --profile app up --build
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://barber:barber@db:5432/barber_saas?schema=public
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  storagedata:

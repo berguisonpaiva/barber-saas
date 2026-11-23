@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "barber-saas-e2e",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/user/AppData/Local/Temp/claude/52f9e729e4533e66/c62a9196-2a41-4ee2-a1be-3bf556bd1510/scratchpad/start-e2e-dev.mjs"],
+      "port": 3100
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# Windows + Linux (Docker/Coolify): finais de linha sempre LF no repositório
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.jpg binary
