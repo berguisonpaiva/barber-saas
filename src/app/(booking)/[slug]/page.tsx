@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Clock, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { BookingFlow } from "@/components/booking/booking-flow";
 import { Badge } from "@/components/ui/badge";
 import { NotFoundError } from "@/shared/errors/app-error";
-import { formatBRL } from "@/shared/utils/money";
 import { getPublicTenant } from "@/modules/tenants/application/use-cases/get-public-tenant";
 import { listPublicServices } from "@/modules/catalog/application/use-cases/list-public-services";
 
@@ -46,21 +46,15 @@ async function Barbershop({ params }: { params: Promise<{ slug: string }> }) {
           {!tenant.bookingEnabled ? <Badge tone="danger">Agendamento online indisponível</Badge> : null}
         </div>
       </header>
-      <section className="flex flex-col gap-3 px-6 pb-10 pt-5">
-        <h2 className="text-title-lg">Serviços</h2>
-        {services.map((s) => (
-          <article key={s.id} className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
-            <div className="flex-1">
-              <h3 className="text-title-sm">{s.name}</h3>
-              <p className="flex items-center gap-1 text-body-sm text-fg-muted">
-                <Clock className="size-3.5" /> {s.durationMinutes} min
-              </p>
-            </div>
-            <p className="text-title-sm">{formatBRL(s.priceCents)}</p>
-          </article>
-        ))}
-        {/* TODO(RF-10): fluxo C2–C5 (profissional → data/horário → dados → comprovante) consumindo /api/public/[slug]/* */}
-      </section>
+      <BookingFlow
+        slug={tenant.slug}
+        shopName={tenant.name}
+        address={tenant.address}
+        timeZone={tenant.timezone}
+        maxAdvanceDays={tenant.maxAdvanceDays}
+        bookingEnabled={tenant.bookingEnabled}
+        services={services}
+      />
     </>
   );
 }

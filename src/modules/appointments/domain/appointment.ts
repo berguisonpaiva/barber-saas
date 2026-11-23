@@ -35,6 +35,18 @@ export interface Booking {
   event: AppointmentConfirmedEvent;
 }
 
+/** O que o cliente vê pelo Link de cancelamento; "closed" = atendido ou faltou (o link não vale mais). */
+export interface CustomerAppointmentView {
+  appointmentId: string;
+  customerName: string;
+  serviceName: string;
+  professionalName: string;
+  startsAt: Date;
+  timeZone: string;
+  cancellationWindowMinutes: number;
+  state: "cancellable" | "window-closed" | "canceled" | "closed";
+}
+
 export class Appointment {
   private constructor(private readonly snapshot: Readonly<AppointmentSnapshot>) {}
 
@@ -49,6 +61,27 @@ export class Appointment {
 
   get id(): string {
     return this.snapshot.id;
+  }
+
+  customerView(at: Date): CustomerAppointmentView {
+    const { id, customerName, serviceName, professionalName, startsAt, timeZone, cancellationWindowMinutes } = this.snapshot;
+    return {
+      appointmentId: id,
+      customerName,
+      serviceName,
+      professionalName,
+      startsAt: new Date(startsAt),
+      timeZone,
+      cancellationWindowMinutes,
+      state: this.customerState(at),
+    };
+  }
+
+  private customerState(at: Date): CustomerAppointmentView["state"] {
+    if (this.isCanceled()) return "canceled";
+    if (this.snapshot.status !== "CONFIRMED") return "closed";
+    const { startsAt, cancellationWindowMinutes } = this.snapshot;
+    return canCustomerCancel(startsAt, at, cancellationWindowMinutes) ? "cancellable" : "window-closed";
   }
 
   isCanceled(): boolean {

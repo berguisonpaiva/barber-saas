@@ -12,6 +12,7 @@ export interface PublicTenant {
   timezone: string;
   address: string | null;
   coverUrl: string | null;
+  maxAdvanceDays: number;
   bookingEnabled: boolean;
 }
 
@@ -30,6 +31,7 @@ export async function getPublicTenant(
       timezone: true,
       address: true,
       coverImageKey: true,
+      maxAdvanceDays: true,
       status: true,
       subscription: { select: { status: true, currentPeriodEnd: true } },
     },
