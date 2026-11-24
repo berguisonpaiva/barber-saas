@@ -5,6 +5,7 @@ import { Appointment } from "../../domain/appointment";
 import { SlotUnavailableError } from "../../domain/errors";
 import type {
   AppointmentRepository,
+  AttendanceRecord,
   CancellationRecord,
   NewAppointmentRecord,
 } from "../../application/ports/appointment-repository";
@@ -52,8 +53,24 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
   }
 
   async findByCancelTokenHash(tenantId: string, tokenHash: string): Promise<Appointment | null> {
+    return this.findOne({ tenantId, cancelTokenHash: tokenHash });
+  }
+
+  async findForOwner(tenantId: string, appointmentId: string): Promise<Appointment | null> {
+    return this.findOne({ tenantId, id: appointmentId });
+  }
+
+  async recordAttendance(record: AttendanceRecord): Promise<"recorded" | "stale"> {
+    const { count } = await prisma.appointment.updateMany({
+      where: { id: record.appointmentId, tenantId: record.tenantId, status: record.from },
+      data: { status: record.to },
+    });
+    return count ? "recorded" : "stale";
+  }
+
+  private async findOne(where: { tenantId: string; cancelTokenHash?: string; id?: string }): Promise<Appointment | null> {
     const appt = await prisma.appointment.findFirst({
-      where: { tenantId, cancelTokenHash: tokenHash },
+      where,
       select: {
         id: true,
         tenantId: true,

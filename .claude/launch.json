@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["C:/Users/user/AppData/Local/Temp/claude/52f9e729e4533e66/c62a9196-2a41-4ee2-a1be-3bf556bd1510/scratchpad/start-e2e-dev.mjs"],
       "port": 3100
+    },
+    {
+      "name": "barber-saas-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/user/AppData/Local/Temp/claude/52f9e729e4533e66/1f8d874d-d8dc-48e6-a34a-23d4a3428ff3/scratchpad/start-preview-dev.mjs"],
+      "port": 3200
     }
   ]
 }

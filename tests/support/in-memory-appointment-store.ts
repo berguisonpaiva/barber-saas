@@ -4,6 +4,7 @@ import type { AppointmentEvent } from "@/modules/appointments/domain/events";
 import { SlotUnavailableError } from "@/modules/appointments/domain/errors";
 import type {
   AppointmentRepository,
+  AttendanceRecord,
   CancellationRecord,
   NewAppointmentRecord,
 } from "@/modules/appointments/application/ports/appointment-repository";
@@ -183,6 +184,22 @@ export class InMemoryAppointmentStore implements AppointmentRepository, Scheduli
     stored.snapshot = { ...stored.snapshot, status: "CANCELED" };
     this.events.push(record.event);
     return "recorded";
+  }
+
+  async findForOwner(tenantId: string, appointmentId: string): Promise<Appointment | null> {
+    const stored = this.appointments.get(appointmentId);
+    return stored && stored.snapshot.tenantId === tenantId ? Appointment.restore(stored.snapshot) : null;
+  }
+
+  async recordAttendance(record: AttendanceRecord): Promise<"recorded" | "stale"> {
+    const stored = this.appointments.get(record.appointmentId);
+    if (!stored || stored.snapshot.tenantId !== record.tenantId || stored.snapshot.status !== record.from) return "stale";
+    stored.snapshot = { ...stored.snapshot, status: record.to };
+    return "recorded";
+  }
+
+  statusOf(appointmentId: string): AppointmentStatus | undefined {
+    return this.appointments.get(appointmentId)?.snapshot.status;
   }
 
   private confirmedOf(tenantId: string, professionalId: string): StoredAppointment[] {

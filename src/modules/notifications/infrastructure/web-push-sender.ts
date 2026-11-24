@@ -1,5 +1,5 @@
 import "server-only";
-import webpush from "web-push";
+import { sendNotification, setVapidDetails } from "web-push";
 import type { PushMessage } from "../domain/messages";
 
 let configured = false;
@@ -8,7 +8,7 @@ function ensureConfigured() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) throw new Error("Chaves VAPID não configuradas.");
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT ?? "mailto:contato@barbersaas.app", publicKey, privateKey);
+  setVapidDetails(process.env.VAPID_SUBJECT ?? "mailto:contato@barbersaas.app", publicKey, privateKey);
   configured = true;
 }
 
@@ -21,7 +21,7 @@ export async function sendPush(
 ): Promise<SendResult> {
   ensureConfigured();
   try {
-    await webpush.sendNotification(
+    await sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       JSON.stringify(message),
       { TTL: 60 * 60 },

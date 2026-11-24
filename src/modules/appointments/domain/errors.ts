@@ -22,6 +22,24 @@ export class CancellationWindowClosedError extends AppError {
   }
 }
 
+export class AppointmentNotFoundError extends AppError {
+  constructor() {
+    super("Agendamento não encontrado.", "APPOINTMENT_NOT_FOUND", 404);
+  }
+}
+
+export class AppointmentClosedError extends ConflictError {
+  constructor(message: string) {
+    super(message, "APPOINTMENT_CLOSED");
+  }
+}
+
+export class AttendanceTooEarlyError extends ConflictError {
+  constructor() {
+    super("Só dá para marcar Atendido ou Faltou a partir do horário marcado.", "ATTENDANCE_TOO_EARLY");
+  }
+}
+
 export class BookingDisabledError extends AppError {
   constructor() {
     super("Esta barbearia não está recebendo agendamentos online no momento.", "BOOKING_DISABLED", 403);

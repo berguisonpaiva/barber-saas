@@ -37,22 +37,24 @@ Formato: iPhone 390 × 844, tema Dark. Para navegar, abra o modo apresentação 
 | Tela | Figma | Conteúdo | Requisitos | Rota |
 |---|---|---|---|---|
 | P0 · Notificação push | [19:503](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=19-503) | Tela bloqueada com push de novo agendamento e cancelamento | RF-13, RN-07 | `public/sw.js` ✅ |
-| P1 · Agenda do dia | [19:539](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=19-539) | Dia/Semana, filtro por profissional, indicadores, lista, botão + | RF-11 | `/painel/agenda` ✅ (lista) |
-| P2 · Detalhe do agendamento | [19:736](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=19-736) | Cliente, WhatsApp/ligar, detalhes, atendido/faltou/cancelar | RN-06 | ⏳ |
-| P3 · Serviços | [19:855](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=19-855) | Lista com ativar/desativar | RF-04, RN-09 | `/painel/servicos` (stub) |
-| P4 · Novo serviço | [20:766](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-766) | Nome, preço, duração, quem realiza, disponível online | RF-04, RN-03 | action pronta ⏳ tela |
-| P5 · Equipe | [20:860](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-860) | Profissionais (sem login) | RF-05 | `/painel/equipe` (stub) |
-| P6 · Horários do profissional | [20:959](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-959) | Expediente semanal com intervalos | RF-06 | ⏳ |
-| P7 · Folgas e bloqueios | [21:873](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-873) | Exceções por data | RF-07 | ⏳ |
-| P8 · Mais | [21:967](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-967) | Link público, assinatura, notificações, regras, sair | — | `/painel/mais` (parcial: link, dados da barbearia → capa, notificações) |
+| P1 · Agenda do dia | [19:539](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=19-539) | Dia/Semana, filtro por profissional, indicadores, lista, botão + | RF-11 | `/painel/agenda?data=` ✅ (lista por dia, navegação entre dias) |
+| P2 · Detalhe do agendamento | [19:736](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=19-736) | Cliente, WhatsApp/ligar, detalhes, atendido/faltou/cancelar | RN-06 | `/painel/agenda/[id]` ✅ |
+| P3 · Serviços | [19:855](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=19-855) | Lista com ativar/desativar | RF-04, RN-09 | `/painel/servicos` ✅ |
+| P4 · Novo serviço | [20:766](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-766) | Nome, preço, duração, quem realiza, disponível online | RF-04, RN-03 | `/painel/servicos/novo` e `/[id]` (editar/excluir) ✅ |
+| P5 · Equipe | [20:860](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-860) | Profissionais (sem login) | RF-05 | `/painel/equipe`, `/novo`, `/[id]` ✅ |
+| P6 · Horários do profissional | [20:959](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=20-959) | Expediente semanal com intervalos | RF-06 | `/painel/equipe/[id]/expediente` ✅ |
+| P7 · Folgas e bloqueios | [21:873](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-873) | Exceções por data | RF-07 | `/painel/equipe/[id]/folgas` ✅ |
+| P8 · Mais | [21:967](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-967) | Link público, assinatura, notificações, regras, sair | — | `/painel/mais` (parcial: link, dados e regras da barbearia + capa, clientes, notificações; falta assinatura) |
 | P9 · Assinatura | [21:1127](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-1127) | Plano, status, próxima cobrança, aviso de pagamento pendente, portal Stripe | RN-02 | ⏳ |
 | P1 · Agenda (Light) | [21:1184](https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy?node-id=21-1184) | Demonstração do tema claro | — | `data-theme="light"` |
+| — · Resumo | — | Indicadores e gráficos do período (7/30/90 dias) | RF-15 | `/painel/resumo` ✅ (sem tela no Figma) |
+| — · Clientes | — | Lista com busca, histórico e edição | RF-16 | `/painel/mais/clientes` e `/[id]` ✅ (sem tela no Figma) |
 
 ## Interações do protótipo
 - C1 → C2 → C3 → C4 → C5 pelos botões "Continuar"; C5 "Cancelar agendamento" → C6 → C7; C7 "Agendar novo horário" → C1.
 - O1 "Entrar" → P1; "Criar minha barbearia" → O2 → O3 → O4 → O5 → O6 → P1.
 - P0 (toque na notificação) → P2; P1 (toque no agendamento das 15:30) → P2.
-- BottomNav: Agenda (P1) · Serviços (P3) · Equipe (P5) · Mais (P8).
+- BottomNav: Resumo · Agenda (P1) · Serviços (P3) · Equipe (P5) · Mais (P8).
 - P3 "+" → P4; P5 "Rafael" → P6; P6 ↔ P7 pelo segmented; P8 "Assinatura" → P9.
 - Botões "voltar" das AppBars usam a ação *Back*.
 

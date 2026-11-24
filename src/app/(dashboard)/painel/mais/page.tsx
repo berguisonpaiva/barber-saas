@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronRight, Store } from "lucide-react";
+import { ChevronRight, Store, UserRound } from "lucide-react";
 import { BookingLinkCard } from "@/components/painel/booking-link-card";
 import { PushManager } from "@/components/painel/push-manager";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,20 @@ export default function MaisPage() {
         </span>
         <span className="flex flex-1 flex-col">
           <span className="text-title-sm">Dados da barbearia</span>
-          <span className="text-body-sm text-fg-muted">Foto de capa</span>
+          <span className="text-body-sm text-fg-muted">Nome, endereço, fuso, regras e capa</span>
+        </span>
+        <ChevronRight className="size-5 text-fg-muted" aria-hidden />
+      </Link>
+      <Link
+        href="/painel/mais/clientes"
+        className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4"
+      >
+        <span className="grid size-10 place-items-center rounded-lg bg-muted">
+          <UserRound className="size-5" aria-hidden />
+        </span>
+        <span className="flex flex-1 flex-col">
+          <span className="text-title-sm">Clientes</span>
+          <span className="text-body-sm text-fg-muted">Histórico e contato</span>
         </span>
         <ChevronRight className="size-5 text-fg-muted" aria-hidden />
       </Link>

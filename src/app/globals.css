@@ -31,6 +31,9 @@
   --color-success-subtle: #10271b;
   --color-danger-fg: #f2675f;
   --color-danger-subtle: #34130f;
+  /* Gráficos do Resumo: marcas validadas contra a superfície (CVD/contraste) — não fazem parte do Figma. */
+  --color-chart-mark-primary: #ffad01;
+  --color-chart-mark-neutral: #6e655b;
 }
 
 [data-theme="light"] {
@@ -58,6 +61,8 @@
   --color-success-subtle: #e1f4e9;
   --color-danger-fg: #c2362f;
   --color-danger-subtle: #fbe4e1;
+  --color-chart-mark-primary: #d18e00;
+  --color-chart-mark-neutral: #a39a8f;
 }
 
 /* Tokens → utilitários do Tailwind (bg-canvas, text-fg, border-line, bg-accent …) */
@@ -84,6 +89,8 @@
   --color-success-subtle: var(--color-success-subtle);
   --color-danger: var(--color-danger-fg);
   --color-danger-subtle: var(--color-danger-subtle);
+  --color-chart: var(--color-chart-mark-primary);
+  --color-chart-neutral: var(--color-chart-mark-neutral);
 
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-playfair), ui-serif, Georgia, serif;

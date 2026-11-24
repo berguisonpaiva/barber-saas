@@ -7,6 +7,8 @@ import { PrismaAppointmentRepository } from "@/modules/appointments/infrastructu
 import { CreateAppointment } from "@/modules/appointments/application/use-cases/create-appointment";
 import { CancelAppointmentByToken } from "@/modules/appointments/application/use-cases/cancel-appointment-by-token";
 import { ViewAppointmentByCancelLink } from "@/modules/appointments/application/use-cases/view-appointment-by-cancel-link";
+import { RecordAttendance } from "@/modules/appointments/application/use-cases/record-attendance";
+import { CancelAppointmentByOwner } from "@/modules/appointments/application/use-cases/cancel-appointment-by-owner";
 
 /**
  * Composição das dependências (casos de uso ← interfaces ← implementações Prisma).
@@ -20,3 +22,5 @@ export const findNextFreeSlot = new FindNextFreeSlot(getAvailableSlots, scheduli
 export const createAppointment = new CreateAppointment(schedulingRepo, getAvailableSlots, appointmentRepo);
 export const cancelAppointmentByToken = new CancelAppointmentByToken(appointmentRepo, systemClock);
 export const viewAppointmentByCancelLink = new ViewAppointmentByCancelLink(appointmentRepo, systemClock);
+export const recordAttendance = new RecordAttendance(appointmentRepo, systemClock);
+export const cancelAppointmentByOwner = new CancelAppointmentByOwner(appointmentRepo, systemClock);

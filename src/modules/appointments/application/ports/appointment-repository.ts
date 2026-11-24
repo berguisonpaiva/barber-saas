@@ -1,4 +1,4 @@
-import type { Appointment } from "../../domain/appointment";
+import type { Appointment, AppointmentStatus } from "../../domain/appointment";
 import type { AppointmentCanceledEvent, AppointmentConfirmedEvent, CanceledBy } from "../../domain/events";
 
 export interface NewAppointmentRecord {
@@ -27,6 +27,13 @@ export interface CancellationRecord {
   event: AppointmentCanceledEvent;
 }
 
+export interface AttendanceRecord {
+  tenantId: string;
+  appointmentId: string;
+  from: AppointmentStatus;
+  to: "COMPLETED" | "NO_SHOW";
+}
+
 export interface AppointmentRepository {
   /**
    * Grava cliente (upsert por telefone), agendamento e evento de outbox na MESMA transação.
@@ -40,4 +47,8 @@ export interface AppointmentRepository {
    * "not-confirmed": outro pedido mudou o estado entre a leitura e a gravação.
    */
   recordCancellation(record: CancellationRecord): Promise<"recorded" | "not-confirmed">;
+  /** Agendamento da barbearia pelo id (painel do proprietário); null se não existir nesta barbearia. */
+  findForOwner(tenantId: string, appointmentId: string): Promise<Appointment | null>;
+  /** Grava Atendido/Faltou só se o status ainda for `from`; "stale": outro pedido mudou o estado antes. */
+  recordAttendance(record: AttendanceRecord): Promise<"recorded" | "stale">;
 }

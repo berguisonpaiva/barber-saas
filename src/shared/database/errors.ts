@@ -27,3 +27,13 @@ export function isUniqueViolation(error: unknown): boolean {
     hasPgCode(error, PG_UNIQUE_VIOLATION)
   );
 }
+
+export const PG_FOREIGN_KEY_VIOLATION = "23503";
+
+/** Prisma: violação de chave estrangeira (P2003) — ex.: excluir registro que ainda tem agendamentos (Restrict). */
+export function isForeignKeyViolation(error: unknown): boolean {
+  return (
+    (typeof error === "object" && error !== null && (error as { code?: string }).code === "P2003") ||
+    hasPgCode(error, PG_FOREIGN_KEY_VIOLATION)
+  );
+}

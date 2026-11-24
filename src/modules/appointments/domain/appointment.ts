@@ -1,5 +1,10 @@
 import { canCustomerCancel } from "./cancellation-policy";
-import { CancellationWindowClosedError, InvalidCancelTokenError } from "./errors";
+import {
+  AppointmentClosedError,
+  AttendanceTooEarlyError,
+  CancellationWindowClosedError,
+  InvalidCancelTokenError,
+} from "./errors";
 import type { AppointmentCanceledEvent, AppointmentConfirmedEvent, AppointmentEventPayload } from "./events";
 
 export type AppointmentStatus = "CONFIRMED" | "COMPLETED" | "CANCELED" | "NO_SHOW";
@@ -24,6 +29,32 @@ export interface AppointmentSnapshot {
 export type CustomerCancellation =
   | { outcome: "canceled"; event: AppointmentCanceledEvent }
   | { outcome: "already-canceled" };
+
+export type OwnerCancellation = CustomerCancellation;
+
+/** Como o atendimento terminou, registrado pelo proprietário. */
+export type AttendanceOutcome = "COMPLETED" | "NO_SHOW";
+
+export type AttendanceChange =
+  | { outcome: "changed"; from: AppointmentStatus; to: AttendanceOutcome }
+  | { outcome: "unchanged" };
+
+/** O que o painel oferece para um agendamento agora (tela P2). */
+export interface OwnerActions {
+  canRecordAttendance: boolean;
+  canCancel: boolean;
+}
+
+/**
+ * Atendido/Faltou: a partir do início, para Confirmado ou para corrigir um ao outro — nunca para Cancelado.
+ * Cancelar: só Confirmado; Atendido e Faltou já encerraram o agendamento.
+ */
+export function ownerActionsFor(status: AppointmentStatus, startsAt: Date, at: Date): OwnerActions {
+  return {
+    canRecordAttendance: status !== "CANCELED" && at.getTime() >= startsAt.getTime(),
+    canCancel: status === "CONFIRMED",
+  };
+}
 
 export type BookingDetails = Pick<
   AppointmentSnapshot,
@@ -101,6 +132,31 @@ export class Appointment {
     return {
       outcome: "canceled",
       event: { type: "appointment.canceled", payload: { ...eventPayloadOf(this.snapshot), canceledBy: "CUSTOMER" } },
+    };
+  }
+
+  ownerActions(at: Date): OwnerActions {
+    return ownerActionsFor(this.snapshot.status, this.snapshot.startsAt, at);
+  }
+
+  /** RN-06: o proprietário encerra o agendamento como Atendido ou Faltou (ou corrige um pelo outro). */
+  recordAttendance(outcome: AttendanceOutcome, at: Date): AttendanceChange {
+    const { status } = this.snapshot;
+    if (status === "CANCELED") throw new AppointmentClosedError("Agendamento cancelado não pode ser marcado.");
+    if (!this.ownerActions(at).canRecordAttendance) throw new AttendanceTooEarlyError();
+    if (status === outcome) return { outcome: "unchanged" };
+    return { outcome: "changed", from: status, to: outcome };
+  }
+
+  /** O proprietário cancela a qualquer momento enquanto Confirmado; repetir o pedido não é erro. */
+  cancelByOwner(): OwnerCancellation {
+    if (this.isCanceled()) return { outcome: "already-canceled" };
+    if (this.snapshot.status !== "CONFIRMED") {
+      throw new AppointmentClosedError("Agendamento já encerrado como Atendido ou Faltou não pode ser cancelado.");
+    }
+    return {
+      outcome: "canceled",
+      event: { type: "appointment.canceled", payload: { ...eventPayloadOf(this.snapshot), canceledBy: "OWNER" } },
     };
   }
 }
