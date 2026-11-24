@@ -18,7 +18,7 @@ npm install                     # também roda "prisma generate"
 npm run db:up                   # sobe o Postgres no Docker
 npm run storage:up              # sobe o storage S3 (RustFS) da foto de capa
 npm run storage:init            # cria o bucket e libera leitura pública
-npm run db:init                 # cria a migração inicial + constraints e aplica
+npm run db:init                 # aplica as migrações versionadas (inclui as constraints)
 npm run db:seed                 # Barbearia do João (joao@demo.com / barber123)
 npm run dev                     # http://localhost:3000
 ```
@@ -54,9 +54,9 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 Copie o `whsec_...` para `STRIPE_WEBHOOK_SECRET`.
 
 ## Deploy (Coolify)
-Build pelo `Dockerfile` (saída `standalone`). Comando de pré-deploy: `npx prisma migrate deploy`.
-Foto de capa: crie um bucket S3 compatível com leitura pública (ex.: Cloudflare R2) e defina as variáveis `S3_*` (veja `.env.example`).
-Agende um cron a cada minuto: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://SEU_DOMINIO/api/jobs/process-outbox`.
+Passo a passo completo em [`docs/deploy.md`](docs/deploy.md). Em resumo: build pelo `Dockerfile`, porta `3000`,
+migrações aplicadas ao iniciar o container (sem comando de pré-deploy), `NEXT_PUBLIC_*` disponíveis no build e
+tarefa agendada `every_minute` chamando `/api/jobs/process-outbox` com `wget` (a imagem não tem `curl`).
 
 ## Status
 Pronto: schema multitenant com FKs compostas e exclusion constraint, motor de disponibilidade com testes,

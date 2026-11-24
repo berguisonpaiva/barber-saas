@@ -28,7 +28,7 @@ PostgreSQL 17 · Prisma 7.10 · schema em [`prisma/schema.prisma`](../prisma/sch
 | RateLimitBucket | key, count, resetAt | Rate limit sem Redis |
 
 ## Constraints adicionadas à migração `init`
-O Prisma não expressa estas regras no schema; `scripts/append-db-constraints.mjs` as acrescenta (roda em `npm run db:init`):
+O Prisma não expressa estas regras no schema; elas estão no fim de `prisma/migrations/20261124000000_init/migration.sql` (copiadas de `prisma/custom-constraints.sql` por `scripts/append-db-constraints.mjs`):
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS btree_gist;
@@ -53,7 +53,7 @@ Violação da EXCLUDE retorna SQLSTATE `23P01`, convertida em `SlotUnavailableEr
 | Comando | Uso |
 |---|---|
 | `npm run db:up` | Postgres local (Docker) |
-| `npm run db:init` | Primeira vez: cria `*_init` + constraints e aplica |
+| `npm run db:init` | Primeira vez: aplica as migrações versionadas (`prisma migrate deploy`) |
 | `npm run db:migrate` | Novas migrações após alterar o schema |
 | `npm run db:seed` | Dados demo (joao@demo.com / barber123) |
 | `npm run db:studio` | Prisma Studio |

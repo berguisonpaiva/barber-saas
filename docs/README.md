@@ -8,6 +8,7 @@
 | [architecture.md](architecture.md) | Stack, camadas, módulos, multitenancy, fluxos principais |
 | [database.md](database.md) | Modelo de dados, constraints e comandos do Prisma |
 | [api.md](api.md) | Rotas públicas, integrações, Server Actions e mapa PRD × código |
+| [deploy.md](deploy.md) | Deploy no Coolify: banco, Dockerfile, variáveis, health check e tarefa do outbox |
 | [design-system.md](design-system.md) | Direção visual, referências Dribbble, tokens, tipografia, espaçamento, temas |
 | [design/tokens.json](design/tokens.json) | Todos os tokens do Figma em formato DTCG |
 | [design/components.md](design/components.md) | Catálogo de componentes (Figma × código) |

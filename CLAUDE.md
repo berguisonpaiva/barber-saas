@@ -18,7 +18,7 @@ Design: Figma https://www.figma.com/design/ipC7Fq18HYOpvrg1RSvBKy (páginas Foun
 npm run db:up        # Postgres via Docker
 npm run storage:up   # storage S3 local (RustFS) da foto de capa
 npm run storage:init # cria o bucket e libera leitura pública
-npm run db:init      # 1ª vez: cria a migração init + constraints customizadas e aplica
+npm run db:init      # 1ª vez: aplica as migrações versionadas (init já traz as constraints)
 npm run db:migrate   # novas migrações
 npm run db:seed      # dados demo (joao@demo.com / barber123)
 npm run dev
