@@ -5,14 +5,16 @@ import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatBRL } from "@/shared/utils/money";
-import { BookingApiError, bookingApi, type BookableProfessional, type BookableService, type BookingConfirmation } from "./booking-api";
+import type { ServiceCombination } from "@/modules/scheduling/domain/service-selection";
+import { BookingApiError, bookingApi, type BookableProfessional, type BookingConfirmation } from "./booking-api";
 import { BottomBar, StepHeader, StepScreen } from "./booking-chrome";
 import { slotSummary } from "./booking-labels";
+import { forgetCustomer, recallCustomer, rememberCustomer } from "./customer-memory";
 
 /** Tela C4 · Seus dados. */
 export function DetailsStep(props: {
   slug: string;
-  service: BookableService;
+  selection: ServiceCombination;
   professional: BookableProfessional;
   slot: string;
   timeZone: string;
@@ -21,9 +23,11 @@ export function DetailsStep(props: {
   onSlotTaken: () => void;
   onConfirmed: (confirmation: BookingConfirmation, customerName: string) => void;
 }) {
-  const { slug, service, professional, slot, timeZone, onChangeSlot, onBack, onSlotTaken, onConfirmed } = props;
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const { slug, selection, professional, slot, timeZone, onChangeSlot, onBack, onSlotTaken, onConfirmed } = props;
+  const [remembered] = useState(recallCustomer);
+  const [name, setName] = useState(remembered?.name ?? "");
+  const [phone, setPhone] = useState(remembered?.phone ?? "");
+  const [remember, setRemember] = useState(true);
   const [consent, setConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,13 +39,15 @@ export function DetailsStep(props: {
     try {
       const honeypot = String(new FormData(event.currentTarget).get("website") ?? "");
       const confirmation = await bookingApi(slug).book({
-        serviceId: service.id,
+        selection,
         professionalId: professional.id,
         startsAt: slot,
         customer: { name: name.trim(), phone: `+55 ${phone}` },
         consent,
         website: honeypot,
       });
+      if (remember) rememberCustomer({ name: name.trim(), phone });
+      else forgetCustomer();
       onConfirmed(confirmation, name.trim());
     } catch (failure) {
       if (failure instanceof BookingApiError && failure.code === "SLOT_UNAVAILABLE") return onSlotTaken();
@@ -64,7 +70,7 @@ export function DetailsStep(props: {
             <span className="flex flex-1 flex-col">
               <span className="text-title-sm">{slotSummary(new Date(slot), timeZone)}</span>
               <span className="text-body-sm text-fg-muted">
-                {service.name} · {professional.name}
+                {selection.name} · {professional.name}
               </span>
             </span>
             <button type="button" onClick={onChangeSlot} className="text-label-md text-fg-accent">
@@ -91,6 +97,16 @@ export function DetailsStep(props: {
           <label className="flex items-start gap-3 text-body-sm text-fg-muted">
             <input
               type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="mt-0.5 size-5 shrink-0 accent-accent"
+            />
+            Lembrar meu nome e WhatsApp neste aparelho para o próximo agendamento.
+          </label>
+
+          <label className="flex items-start gap-3 text-body-sm text-fg-muted">
+            <input
+              type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-0.5 size-5 shrink-0 accent-accent"
@@ -108,7 +124,7 @@ export function DetailsStep(props: {
         <BottomBar>
           <div className="flex items-center justify-between">
             <span className="text-body-md text-fg-muted">Total · pago na barbearia</span>
-            <span className="text-title-lg">{formatBRL(service.priceCents)}</span>
+            <span className="text-title-lg">{formatBRL(selection.priceCents)}</span>
           </div>
           <Button type="submit" block disabled={!ready || sending}>
             {sending ? "Confirmando…" : "Confirmar agendamento"}

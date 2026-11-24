@@ -29,6 +29,11 @@ export interface AvailabilityInput {
   maxAdvanceDays: number;
 }
 
+/** A grade anda pela duração do atendimento, arredondada para cima ao múltiplo da Grade de horários (60 min em grade de 30 → de hora em hora). */
+export function slotStep(durationMinutes: number, slotIntervalMinutes: number): number {
+  return Math.ceil(durationMinutes / slotIntervalMinutes) * slotIntervalMinutes;
+}
+
 function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
   return aStart < bEnd && bStart < aEnd;
 }
@@ -52,11 +57,12 @@ export function computeAvailableSlots(input: AvailabilityInput): Date[] {
   if (day.isAfter(LocalDay.of(now, day.timeZone).addDays(maxAdvanceDays))) return [];
 
   const earliest = now.getTime() + minAdvanceMinutes * 60_000;
+  const step = slotStep(durationMinutes, slotIntervalMinutes);
 
   const result = new Map<number, Date>();
 
   for (const window of workingWindows) {
-    for (let start = window.start; start + durationMinutes <= window.end; start += slotIntervalMinutes) {
+    for (let start = window.start; start + durationMinutes <= window.end; start += step) {
       const end = start + durationMinutes;
 
       if (blocks.some((b) => overlaps(start, end, b.start, b.end))) continue;

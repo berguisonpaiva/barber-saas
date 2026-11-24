@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/shared/utils/money";
-import { bookingApi, type BookableProfessional, type BookableService } from "./booking-api";
+import type { ServiceCombination } from "@/modules/scheduling/domain/service-selection";
+import { bookingApi, type BookableProfessional } from "./booking-api";
 import { BottomBar, ChoiceCard, Initials, StepHeader, StepScreen } from "./booking-chrome";
 import { nextSlotLabel } from "./booking-labels";
 
@@ -13,26 +14,26 @@ type Load = { status: "loading" } | { status: "error"; message: string } | { sta
 /** Tela C2 · Escolher profissional. */
 export function ProfessionalStep(props: {
   slug: string;
-  service: BookableService;
+  selection: ServiceCombination;
   timeZone: string;
   selected: BookableProfessional | null;
   onSelect: (professional: BookableProfessional) => void;
   onBack: () => void;
   onContinue: () => void;
 }) {
-  const { slug, service, timeZone, selected, onSelect, onBack, onContinue } = props;
+  const { slug, selection, timeZone, selected, onSelect, onBack, onContinue } = props;
   const [load, setLoad] = useState<Load>({ status: "loading" });
 
   useEffect(() => {
     let active = true;
     bookingApi(slug)
-      .professionals(service.id)
+      .professionals(selection)
       .then((professionals) => active && setLoad({ status: "ready", professionals }))
       .catch((error: Error) => active && setLoad({ status: "error", message: error.message }));
     return () => {
       active = false;
     };
-  }, [slug, service.id]);
+  }, [slug, selection]);
 
   return (
     <StepScreen>
@@ -40,7 +41,7 @@ export function ProfessionalStep(props: {
       <main className="flex flex-col gap-5 px-6 pb-6 pt-5">
         <p className="flex items-center gap-2 rounded-xl bg-accent-subtle px-4 py-3 text-body-md text-fg-accent">
           <Scissors className="size-4" aria-hidden />
-          {service.name} · {service.durationMinutes} min · {formatBRL(service.priceCents)}
+          {selection.name} · {selection.durationMinutes} min · {formatBRL(selection.priceCents)}
         </p>
         <h2 className="text-display-sm">Quem vai te atender?</h2>
         <ProfessionalList load={load} timeZone={timeZone} selected={selected} onSelect={onSelect} />

@@ -8,9 +8,9 @@ Erros seguem o formato `{ "error": { "code": "…", "message": "…" } }`.
 | Método | Rota | Entrada | Saída | Proteções |
 |---|---|---|---|---|
 | GET | `/api/public/:slug/services` | — | `{ tenant: { name, bookingEnabled }, services[] }` | — |
-| GET | `/api/public/:slug/professionals` | `?serviceId=` (opcional) | `{ professionals[] }` | — |
-| GET | `/api/public/:slug/availability` | `?serviceId&professionalId&date=AAAA-MM-DD` | `{ date, timeZone, bookingEnabled, slots: ISO[] }` | rate limit 120/min por IP |
-| POST | `/api/public/:slug/appointments` | `{ serviceId, professionalId, startsAt (ISO c/ offset), customer: { name, phone }, consent: true, website: "" }` | 201 `{ appointmentId, startsAt, endsAt, cancelUrl }` | rate limit 5/10 min, honeypot `website`, assinatura ativa |
+| GET | `/api/public/:slug/professionals` | `?serviceIds=a,b` (opcional; só quem executa todos) | `{ professionals[] }` | — |
+| GET | `/api/public/:slug/availability` | `?serviceIds=a,b&professionalId&date=AAAA-MM-DD` (1 a 5 serviços; duração somada) | `{ date, timeZone, bookingEnabled, slots: ISO[] }` | rate limit 120/min por IP |
+| POST | `/api/public/:slug/appointments` | `{ serviceIds: [1 a 5], professionalId, startsAt (ISO c/ offset), customer: { name, phone }, consent: true, website: "" }` | 201 `{ appointmentId, startsAt, endsAt, cancelUrl }` | rate limit 5/10 min, honeypot `website`, assinatura ativa |
 | POST | `/api/public/:slug/appointments/cancel` | `{ token }` | `{ appointmentId }` | rate limit 10/10 min, token com hash e validade |
 
 Códigos de erro: `VALIDATION_ERROR` 422 · `NOT_FOUND` 404 · `SLOT_UNAVAILABLE` 409 · `BOOKING_DISABLED` 403 · `INVALID_CANCEL_TOKEN` 404 · `CANCELLATION_WINDOW_CLOSED` 409 · `RATE_LIMITED` 429 (com `Retry-After`).

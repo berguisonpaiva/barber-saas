@@ -1,13 +1,25 @@
 import { z } from "zod";
+import { MAX_SERVICES_PER_APPOINTMENT } from "@/modules/scheduling/domain/service-selection";
+
+const serviceIdList = z
+  .array(z.uuid())
+  .min(1, "Escolha ao menos um serviço.")
+  .max(MAX_SERVICES_PER_APPOINTMENT, `Escolha até ${MAX_SERVICES_PER_APPOINTMENT} serviços por agendamento.`);
+
+/** Na URL os serviços vão separados por vírgula: ?serviceIds=a,b */
+export const serviceIdsParam = z
+  .string()
+  .transform((value) => value.split(",").filter(Boolean))
+  .pipe(serviceIdList);
 
 export const availabilityQuerySchema = z.object({
-  serviceId: z.uuid(),
+  serviceIds: serviceIdsParam,
   professionalId: z.uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use AAAA-MM-DD."),
 });
 
 export const createPublicAppointmentSchema = z.object({
-  serviceId: z.uuid(),
+  serviceIds: serviceIdList,
   professionalId: z.uuid(),
   startsAt: z.iso.datetime({ offset: true }).transform((v) => new Date(v)),
   customer: z.object({

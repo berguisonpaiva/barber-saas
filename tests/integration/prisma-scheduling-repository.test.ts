@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { LocalDay } from "@/shared/time/local-day";
 import type { SchedulingRepository } from "@/modules/scheduling/application/ports/scheduling-repository";
 import type { PrismaClient } from "@/shared/database/prisma";
+import { oneService } from "../support/appointment-services";
 
 const url = process.env.DATABASE_URL_TEST;
 const TZ = "America/Fortaleza";
@@ -48,7 +49,7 @@ describe.skipIf(!url)("adapter Prisma do Horário livre (Postgres)", () => {
       data: {
         tenantId: b.tenantId,
         professionalId: b.professionalId,
-        serviceId: b.serviceId,
+        services: oneService(b.serviceId),
         customerId: b.customerId,
         startsAt: from,
         endsAt: to,
@@ -114,7 +115,7 @@ describe.skipIf(!url)("adapter Prisma do Horário livre (Postgres)", () => {
     await addAppointment(b, at("09:00"), at("09:30"), "CONFIRMED");
 
     expect(await mondayFacts(a, b.professionalId)).toEqual({ workingPeriods: [], exceptions: [], appointments: [] });
-    expect(await repo.findOffer(a.tenantId, b.professionalId, b.serviceId)).toBeNull();
+    expect(await repo.findOffer(a.tenantId, b.professionalId, [b.serviceId])).toBeNull();
   });
 
   it("findOffer traz o indicador de ativo, e null quando o profissional não executa o serviço", async () => {
@@ -124,14 +125,28 @@ describe.skipIf(!url)("adapter Prisma do Horário livre (Postgres)", () => {
       data: { tenantId: active.tenantId, name: "Sobrancelha", priceCents: 2000, durationMinutes: 30 },
     });
 
-    expect(await repo.findOffer(active.tenantId, active.professionalId, active.serviceId)).toEqual({
-      service: { id: active.serviceId, name: "Corte", priceCents: 4000, durationMinutes: 30, active: true },
+    expect(await repo.findOffer(active.tenantId, active.professionalId, [active.serviceId])).toEqual({
+      services: [{ id: active.serviceId, name: "Corte", priceCents: 4000, durationMinutes: 30, active: true }],
       professional: { name: "Rafael", active: true },
     });
-    expect(await repo.findOffer(inactive.tenantId, inactive.professionalId, inactive.serviceId)).toMatchObject({
-      service: { active: false },
+    expect(await repo.findOffer(inactive.tenantId, inactive.professionalId, [inactive.serviceId])).toMatchObject({
+      services: [{ active: false }],
       professional: { active: false },
     });
-    expect(await repo.findOffer(active.tenantId, active.professionalId, otherService.id)).toBeNull();
+    expect(await repo.findOffer(active.tenantId, active.professionalId, [otherService.id])).toBeNull();
+  });
+
+  it("findOffer com vários serviços devolve na ordem pedida, e null se faltar um deles ao profissional", async () => {
+    const b = await newBarbearia();
+    const barba = await prisma.service.create({ data: { tenantId: b.tenantId, name: "Barba", priceCents: 2500, durationMinutes: 20 } });
+    const sobrancelha = await prisma.service.create({
+      data: { tenantId: b.tenantId, name: "Sobrancelha", priceCents: 2000, durationMinutes: 10 },
+    });
+    await prisma.professionalService.create({ data: { tenantId: b.tenantId, professionalId: b.professionalId, serviceId: barba.id } });
+
+    const offer = await repo.findOffer(b.tenantId, b.professionalId, [barba.id, b.serviceId]);
+
+    expect(offer?.services.map((service) => service.name)).toEqual(["Barba", "Corte"]);
+    expect(await repo.findOffer(b.tenantId, b.professionalId, [b.serviceId, sobrancelha.id])).toBeNull();
   });
 });

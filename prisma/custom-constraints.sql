@@ -19,3 +19,7 @@ ALTER TABLE "Service"
 ALTER TABLE "AvailabilityRule"
   ADD CONSTRAINT "AvailabilityRule_range_check"
   CHECK ("weekday" BETWEEN 0 AND 6 AND "startMinute" >= 0 AND "endMinute" <= 1440 AND "endMinute" > "startMinute");
+
+ALTER TABLE "AppointmentService"
+  ADD CONSTRAINT "AppointmentService_values_check"
+  CHECK ("position" >= 0 AND "priceSnapshotCents" >= 0 AND "durationSnapshotMinute" > 0);

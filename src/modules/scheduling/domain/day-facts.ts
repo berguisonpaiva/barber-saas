@@ -27,7 +27,7 @@ export interface DaySchedule {
 }
 
 export interface OfferFacts {
-  service: { id: string; name: string; priceCents: number; durationMinutes: number; active: boolean };
+  services: { id: string; name: string; priceCents: number; durationMinutes: number; active: boolean }[];
   professional: { name: string; active: boolean };
 }
 
@@ -41,7 +41,7 @@ export function scheduleOf(facts: DayFacts): DaySchedule {
   return { workingWindows: facts.workingPeriods, blocks, dayOff, busy };
 }
 
-/** Profissional ou serviço Desativado não oferece horários. */
+/** Profissional Desativado, ou qualquer serviço escolhido Desativado, não oferece horários. */
 export function isBookable(offer: OfferFacts): boolean {
-  return offer.service.active && offer.professional.active;
+  return offer.professional.active && offer.services.every((service) => service.active);
 }

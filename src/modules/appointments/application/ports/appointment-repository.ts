@@ -1,3 +1,4 @@
+import type { SelectedService } from "@/modules/scheduling/domain/service-selection";
 import type { Appointment, AppointmentStatus } from "../../domain/appointment";
 import type { AppointmentCanceledEvent, AppointmentConfirmedEvent, CanceledBy } from "../../domain/events";
 
@@ -5,7 +6,8 @@ export interface NewAppointmentRecord {
   id: string;
   tenantId: string;
   professionalId: string;
-  serviceId: string;
+  /** Na ordem escolhida pelo cliente; preço, nome e duração abaixo são a combinação deles. */
+  services: readonly SelectedService[];
   customer: { name: string; phone: string };
   startsAt: Date;
   endsAt: Date;

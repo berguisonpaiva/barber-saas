@@ -4,12 +4,13 @@ import { checkboxField, optionalText } from "@/shared/forms/fields";
 export const serviceSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome.").max(80, "Use até 80 caracteres."),
   description: optionalText(300),
-  /** Aceita "40,00" ou "40.00" e converte para centavos. */
+  /** Aceita "1.500,00", "40,00" ou "40.00" e converte para centavos. */
   price: z
     .string()
     .trim()
-    .regex(/^\d{1,5}([.,]\d{1,2})?$/, "Preço inválido.")
-    .transform((v) => Math.round(Number(v.replace(",", ".")) * 100)),
+    .transform((v) => (v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v))
+    .pipe(z.string().regex(/^\d{1,5}(\.\d{1,2})?$/, "Preço inválido."))
+    .transform((v) => Math.round(Number(v) * 100)),
   durationMinutes: z.coerce
     .number({ error: "Informe a duração." })
     .int("Use minutos inteiros.")

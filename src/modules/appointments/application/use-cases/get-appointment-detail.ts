@@ -17,6 +17,10 @@ export async function getAppointmentDetail(tenantId: string, appointmentId: stri
       priceSnapshotCents: true,
       serviceNameSnapshot: true,
       durationSnapshotMinute: true,
+      services: {
+        select: { serviceId: true, serviceNameSnapshot: true, priceSnapshotCents: true, durationSnapshotMinute: true },
+        orderBy: { position: "asc" },
+      },
       customerNameSnapshot: true,
       canceledAt: true,
       canceledBy: true,

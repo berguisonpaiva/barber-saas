@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { hasPgCode, isForeignKeyViolation, PG_EXCLUSION_VIOLATION } from "@/shared/database/errors";
 import type { PrismaClient } from "@/shared/database/prisma";
+import { oneService } from "../support/appointment-services";
 
 /** PRD §12: o proprietário do tenant A não pode consultar nem alterar dados do tenant B. */
 const url = process.env.DATABASE_URL_TEST;
@@ -43,10 +44,11 @@ describe.skipIf(!url)("isolamento multitenant (Postgres)", () => {
     return { tenantId: tenant.id, professionalId: professional.id, serviceId: service.id, customerId: customer.id };
   }
 
-  function insertAppointment(ids: Barbearia, startsAt: Date, status: "CONFIRMED" | "CANCELED" = "CONFIRMED") {
+  function insertAppointment({ serviceId, ...ids }: Barbearia, startsAt: Date, status: "CONFIRMED" | "CANCELED" = "CONFIRMED") {
     return prisma.appointment.create({
       data: {
         ...ids,
+        services: oneService(serviceId),
         startsAt,
         endsAt: new Date(startsAt.getTime() + 30 * 60_000),
         status,

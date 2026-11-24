@@ -8,6 +8,7 @@ import type {
 } from "@/modules/appointments/application/ports/appointment-repository";
 import { generateToken, hashToken } from "@/shared/security/token";
 import type { PrismaClient } from "@/shared/database/prisma";
+import { combineServices, type SelectedService } from "@/modules/scheduling/domain/service-selection";
 
 const url = process.env.DATABASE_URL_TEST;
 const at = (hhmm: string) => new Date(`2030-03-04T${hhmm}:00-03:00`);
@@ -16,7 +17,8 @@ const carlos = { name: "Carlos", phone: "+5585998765432" };
 interface Barbearia {
   tenantId: string;
   professionalId: string;
-  serviceId: string;
+  corte: SelectedService;
+  barba: SelectedService;
 }
 
 describe.skipIf(!url)("adapter Prisma do Agendamento (Postgres)", () => {
@@ -39,34 +41,43 @@ describe.skipIf(!url)("adapter Prisma do Agendamento (Postgres)", () => {
   async function newBarbearia(): Promise<Barbearia> {
     const tenant = await prisma.tenant.create({ data: { name: "Barbearia Teste", slug: `teste-${randomUUID().slice(0, 8)}` } });
     const professional = await prisma.professional.create({ data: { tenantId: tenant.id, name: "Rafael" } });
-    const service = await prisma.service.create({
-      data: { tenantId: tenant.id, name: "Corte", priceCents: 4000, durationMinutes: 30 },
-    });
-    return { tenantId: tenant.id, professionalId: professional.id, serviceId: service.id };
+    const newService = async (name: string, priceCents: number, durationMinutes: number) => {
+      const { id } = await prisma.service.create({ data: { tenantId: tenant.id, name, priceCents, durationMinutes } });
+      return { id, name, priceCents, durationMinutes };
+    };
+    return {
+      tenantId: tenant.id,
+      professionalId: professional.id,
+      corte: await newService("Corte", 4000, 30),
+      barba: await newService("Barba", 2500, 20),
+    };
   }
 
-  function newBooking(barbearia: Barbearia, startsAt: Date, customer = carlos) {
+  function newBooking(barbearia: Barbearia, startsAt: Date, customer = carlos, services = [barbearia.corte]) {
     const id = randomUUID();
     const token = generateToken();
-    const endsAt = new Date(startsAt.getTime() + 30 * 60_000);
+    const combination = combineServices(services);
+    const endsAt = new Date(startsAt.getTime() + combination.durationMinutes * 60_000);
     const booking = Appointment.book({
       id,
       startsAt,
       customerName: customer.name,
-      serviceName: "Corte",
+      serviceName: combination.name,
       professionalName: "Rafael",
       timeZone: "America/Fortaleza",
     });
     const record: NewAppointmentRecord = {
       id,
-      ...barbearia,
+      tenantId: barbearia.tenantId,
+      professionalId: barbearia.professionalId,
+      services: combination.services,
       customer,
       startsAt,
       endsAt,
       status: booking.status,
-      priceCents: 4000,
-      serviceName: "Corte",
-      durationMinutes: 30,
+      priceCents: combination.priceCents,
+      serviceName: combination.name,
+      durationMinutes: combination.durationMinutes,
       cancelTokenHash: hashToken(token),
       cancelTokenExpiresAt: endsAt,
       source: "PUBLIC_LINK",
@@ -125,6 +136,38 @@ describe.skipIf(!url)("adapter Prisma do Agendamento (Postgres)", () => {
     const cancellation = pedro!.cancelByCustomer(new Date());
 
     expect(cancellation.outcome === "canceled" && cancellation.event.payload.customerName).toBe("Pedro");
+  });
+
+  it("grava cada serviço do agendamento na ordem escolhida, com o que valia na marcação", async () => {
+    const barbearia = await newBarbearia();
+    const { record } = newBooking(barbearia, at("17:00"), carlos, [barbearia.barba, barbearia.corte]);
+    await repo.insert(record);
+    await prisma.service.update({ where: { id: barbearia.corte.id }, data: { priceCents: 9900, name: "Corte novo" } });
+
+    const appointment = await prisma.appointment.findUniqueOrThrow({
+      where: { id: record.id },
+      select: {
+        serviceNameSnapshot: true,
+        priceSnapshotCents: true,
+        durationSnapshotMinute: true,
+        endsAt: true,
+        services: {
+          orderBy: { position: "asc" },
+          select: { serviceId: true, serviceNameSnapshot: true, priceSnapshotCents: true, durationSnapshotMinute: true },
+        },
+      },
+    });
+
+    expect(appointment).toEqual({
+      serviceNameSnapshot: "Barba + Corte",
+      priceSnapshotCents: 6500,
+      durationSnapshotMinute: 50,
+      endsAt: at("17:50"),
+      services: [
+        { serviceId: barbearia.barba.id, serviceNameSnapshot: "Barba", priceSnapshotCents: 2500, durationSnapshotMinute: 20 },
+        { serviceId: barbearia.corte.id, serviceNameSnapshot: "Corte", priceSnapshotCents: 4000, durationSnapshotMinute: 30 },
+      ],
+    });
   });
 
   it("não encontra o link de uma barbearia a partir de outra", async () => {

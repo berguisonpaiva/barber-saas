@@ -1,3 +1,5 @@
+import type { ServiceCombination } from "@/modules/scheduling/domain/service-selection";
+
 export interface BookableService {
   id: string;
   name: string;
@@ -38,16 +40,22 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+const serviceIdsOf = (selection: ServiceCombination) => selection.services.map((service) => service.id);
+
 /** Chamadas às rotas públicas da barbearia (o tenant é sempre o do slug). */
 export function bookingApi(slug: string) {
   const base = `/api/public/${encodeURIComponent(slug)}`;
   return {
-    professionals: async (serviceId: string) =>
-      (await request<{ professionals: BookableProfessional[] }>(`${base}/professionals?serviceId=${serviceId}`)).professionals,
-    slots: async (params: { serviceId: string; professionalId: string; date: string }) =>
-      (await request<{ slots: string[] }>(`${base}/availability?${new URLSearchParams(params)}`)).slots,
-    book: (payload: {
-      serviceId: string;
+    professionals: async (selection: ServiceCombination) => {
+      const query = new URLSearchParams({ serviceIds: serviceIdsOf(selection).join(",") });
+      return (await request<{ professionals: BookableProfessional[] }>(`${base}/professionals?${query}`)).professionals;
+    },
+    slots: async ({ selection, ...params }: { selection: ServiceCombination; professionalId: string; date: string }) => {
+      const query = new URLSearchParams({ serviceIds: serviceIdsOf(selection).join(","), ...params });
+      return (await request<{ slots: string[] }>(`${base}/availability?${query}`)).slots;
+    },
+    book: ({ selection, ...payload }: {
+      selection: ServiceCombination;
       professionalId: string;
       startsAt: string;
       customer: { name: string; phone: string };
@@ -57,7 +65,7 @@ export function bookingApi(slug: string) {
       request<BookingConfirmation>(`${base}/appointments`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ serviceIds: serviceIdsOf(selection), ...payload }),
       }),
   };
 }

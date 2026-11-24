@@ -45,7 +45,7 @@ Pausa de descanso dentro do expediente (ex.: 10h30–11h).
 _Avoid_: pausa, almoço (como termo genérico)
 
 **Grade de horários**:
-De quanto em quanto tempo um horário pode começar (ex.: de 30 em 30 minutos), contando a partir do início de cada período do expediente.
+Passo mínimo entre os inícios possíveis (ex.: de 30 em 30 minutos), contando a partir do início de cada período do expediente. Os horários de um atendimento andam pela duração dele arredondada para cima ao múltiplo da grade: 60 min em grade de 30 vai de hora em hora; 15 min fica de 30 em 30. Ver docs/adr/0002-grade-anda-pela-duracao.md.
 _Avoid_: intervalo, intervalo de início, passo, slot
 
 **Folga**:
@@ -57,7 +57,7 @@ Trecho de um dia em que o profissional não atende, fora do expediente normal (e
 _Avoid_: exceção, indisponibilidade
 
 **Horário livre**:
-Início possível para um serviço com um profissional numa data, em que a duração inteira cabe sem conflito.
+Início possível para os serviços escolhidos com um profissional numa data, em que a duração somada cabe sem conflito.
 _Avoid_: slot, vaga, horário disponível
 
 **Fuso da barbearia**:
@@ -73,7 +73,7 @@ Até quantos dias de calendário à frente, no fuso da barbearia, a agenda aceit
 ## Agendamento
 
 **Agendamento**:
-Um cliente marcado com um profissional para um serviço, num início e fim definidos.
+Um cliente marcado com um profissional para um ou mais serviços (até 5), num início e fim definidos; o fim é o início mais a duração somada dos serviços. Ver docs/adr/0001-agendamento-com-varios-servicos.md.
 _Avoid_: reserva, marcação, horário (como sinônimo do agendamento)
 
 **Confirmado**:

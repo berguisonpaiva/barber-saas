@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ConflictError, NotFoundError, ValidationError } from "@/shared/errors/app-error";
 import type { PrismaClient } from "@/shared/database/prisma";
 import type { Clock } from "@/shared/utils/clock";
+import { oneService } from "../support/appointment-services";
 
 const url = process.env.DATABASE_URL_TEST;
 const FIXED_NOW = new Date("2030-03-04T12:00:00Z"); // 09:00 em Fortaleza
@@ -76,7 +77,7 @@ describe.skipIf(!url)("cadastros do proprietário (Postgres)", () => {
       data: {
         tenantId,
         professionalId,
-        serviceId,
+        services: oneService(serviceId, 4500),
         customerId: customer.id,
         startsAt,
         endsAt: new Date(startsAt.getTime() + 30 * 60_000),
@@ -308,7 +309,7 @@ describe.skipIf(!url)("cadastros do proprietário (Postgres)", () => {
           data: {
             tenantId,
             professionalId: professional.id,
-            serviceId: service.id,
+            services: oneService(service.id, priceCents),
             customerId: customer.id,
             startsAt: new Date(startsAt),
             endsAt: new Date(new Date(startsAt).getTime() + 30 * 60_000),

@@ -7,7 +7,8 @@ import { clockTime } from "@/shared/time/format";
 import { LocalDay } from "@/shared/time/local-day";
 import { cn } from "@/shared/utils/cn";
 import { formatBRL } from "@/shared/utils/money";
-import { bookingApi, type BookableProfessional, type BookableService } from "./booking-api";
+import type { ServiceCombination } from "@/modules/scheduling/domain/service-selection";
+import { bookingApi, type BookableProfessional } from "./booking-api";
 import { BottomBar, StepHeader, StepScreen } from "./booking-chrome";
 import { dayPill, monthTitle, slotSummary, splitByPeriod, timeZoneLabel } from "./booking-labels";
 
@@ -16,7 +17,7 @@ type DaySlots = { status: "ready"; slots: Date[] } | { status: "error"; message:
 /** Tela C3 · Data e horário. */
 export function SlotStep(props: {
   slug: string;
-  service: BookableService;
+  selection: ServiceCombination;
   professional: BookableProfessional;
   timeZone: string;
   maxAdvanceDays: number;
@@ -26,7 +27,7 @@ export function SlotStep(props: {
   onBack: () => void;
   onContinue: () => void;
 }) {
-  const { slug, service, professional, timeZone, maxAdvanceDays, selectedSlot, notice, onSelect, onBack, onContinue } = props;
+  const { slug, selection, professional, timeZone, maxAdvanceDays, selectedSlot, notice, onSelect, onBack, onContinue } = props;
   const days = useMemo(() => {
     const today = LocalDay.today({ now: () => new Date() }, timeZone);
     return Array.from({ length: maxAdvanceDays + 1 }, (_, offset) => today.addDays(offset));
@@ -43,13 +44,13 @@ export function SlotStep(props: {
     if (loaded) return;
     let active = true;
     bookingApi(slug)
-      .slots({ serviceId: service.id, professionalId: professional.id, date: day })
+      .slots({ selection, professionalId: professional.id, date: day })
       .then((slots) => active && setSlotsByDay((all) => ({ ...all, [day]: { status: "ready", slots: slots.map((s) => new Date(s)) } })))
       .catch((error: Error) => active && setSlotsByDay((all) => ({ ...all, [day]: { status: "error", message: error.message } })));
     return () => {
       active = false;
     };
-  }, [slug, service.id, professional.id, day, loaded]);
+  }, [slug, selection, professional.id, day, loaded]);
 
   const selected = selectedSlot ? new Date(selectedSlot) : null;
   const selectedDay = LocalDay.parse(day, timeZone);
@@ -78,10 +79,10 @@ export function SlotStep(props: {
             <div className="flex flex-col">
               <span className="text-title-sm">{slotSummary(selected, timeZone)}</span>
               <span className="text-body-sm text-fg-muted">
-                até {clockTime(new Date(selected.getTime() + service.durationMinutes * 60_000), timeZone)} · {professional.name}
+                até {clockTime(new Date(selected.getTime() + selection.durationMinutes * 60_000), timeZone)} · {professional.name}
               </span>
             </div>
-            <span className="text-title-md text-fg-accent">{formatBRL(service.priceCents)}</span>
+            <span className="text-title-md text-fg-accent">{formatBRL(selection.priceCents)}</span>
           </div>
         ) : null}
         <Button block disabled={!selected} onClick={onContinue}>

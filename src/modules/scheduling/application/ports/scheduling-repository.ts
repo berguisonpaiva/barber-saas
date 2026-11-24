@@ -7,21 +7,17 @@ export interface SchedulingSettings {
   maxAdvanceDays: number;
 }
 
-export interface SchedulingService {
-  id: string;
-  name: string;
-  priceCents: number;
-  durationMinutes: number;
-}
-
 /**
  * Porta de leitura do Horário livre: devolve fatos, sem aplicar regras de domínio.
  * Toda consulta é obrigatoriamente filtrada por tenantId.
  */
 export interface SchedulingRepository {
   getSettings(tenantId: string): Promise<SchedulingSettings | null>;
-  /** Serviço e profissional com o indicador de ativo; null se o profissional não executa o serviço. */
-  findOffer(tenantId: string, professionalId: string, serviceId: string): Promise<OfferFacts | null>;
+  /**
+   * Serviços (na ordem dos ids) e profissional com o indicador de ativo;
+   * null se o profissional não executa algum dos serviços.
+   */
+  findOffer(tenantId: string, professionalId: string, serviceIds: readonly string[]): Promise<OfferFacts | null>;
   /** Expediente do dia da semana, exceções da data e agendamentos de qualquer estado que tocam o dia. */
   getDayFacts(params: {
     tenantId: string;

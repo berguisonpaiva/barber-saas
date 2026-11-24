@@ -37,7 +37,7 @@ function setup(now = "2026-11-20T12:00:00.000Z") {
   const book = new CreateAppointment(store, slots, store);
   const cancel = new CancelAppointmentByToken(store, clock);
   const freeTimes = async () =>
-    (await slots.execute({ tenantId: TENANT, professionalId: PROFESSIONAL, serviceId: SERVICE, date: MONDAY })).slots.map(
+    (await slots.execute({ tenantId: TENANT, professionalId: PROFESSIONAL, serviceIds: [SERVICE], date: MONDAY })).slots.map(
       (s) => s.toISOString(),
     );
   return { store, book, cancel, freeTimes };
@@ -47,9 +47,30 @@ const carlos = { name: "Carlos", phone: "(85) 99876-5432" };
 const booking = (startsAt: Date, customer = carlos) => ({
   tenantId: TENANT,
   professionalId: PROFESSIONAL,
-  serviceId: SERVICE,
+  serviceIds: [SERVICE],
   startsAt,
   customer,
+});
+
+describe("marcar um agendamento com vários serviços", () => {
+  it("Corte + Barba ocupa a duração somada e avisa o proprietário com o nome combinado", async () => {
+    const { store, book } = setup();
+    store.addService({ tenantId: TENANT, id: "svc-barba", name: "Barba", priceCents: 2500, durationMinutes: 20, professionalIds: [PROFESSIONAL] });
+
+    const result = await book.execute({ ...booking(at("09:00")), serviceIds: [SERVICE, "svc-barba"] });
+
+    expect(result).toMatchObject({ startsAt: at("09:00"), endsAt: at("09:50") });
+    expect(store.outbox.at(-1)?.payload).toMatchObject({ serviceName: "Corte + Barba" });
+  });
+
+  it("o horário seguinte só fica livre depois do fim da combinação", async () => {
+    const { store, book, freeTimes } = setup();
+    store.addService({ tenantId: TENANT, id: "svc-barba", name: "Barba", priceCents: 2500, durationMinutes: 20, professionalIds: [PROFESSIONAL] });
+
+    await book.execute({ ...booking(at("09:00")), serviceIds: [SERVICE, "svc-barba"] });
+
+    expect(await freeTimes()).toEqual([at("10:00"), at("10:30"), at("11:00"), at("11:30")].map((d) => d.toISOString()));
+  });
 });
 
 describe("marcar um agendamento", () => {

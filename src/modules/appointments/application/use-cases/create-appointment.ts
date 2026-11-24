@@ -12,7 +12,7 @@ import type { AppointmentRepository } from "../ports/appointment-repository";
 export interface CreateAppointmentInput {
   tenantId: string;
   professionalId: string;
-  serviceId: string;
+  serviceIds: readonly string[];
   startsAt: Date;
   customer: { name: string; phone: string };
   source?: "PUBLIC_LINK" | "OWNER_PANEL";
@@ -45,22 +45,22 @@ export class CreateAppointment {
 
     // 1ª barreira: o horário precisa estar entre os livres calculados agora.
     const date = LocalDay.of(input.startsAt, settings.timeZone).toString();
-    const { service, professionalName, slots } = await this.getAvailableSlots.execute({
+    const { combination, professionalName, slots } = await this.getAvailableSlots.execute({
       tenantId: input.tenantId,
       professionalId: input.professionalId,
-      serviceId: input.serviceId,
+      serviceIds: input.serviceIds,
       date,
     });
     if (!slots.some((s) => s.getTime() === input.startsAt.getTime())) throw new SlotUnavailableError();
 
     const id = randomUUID();
-    const endsAt = new Date(input.startsAt.getTime() + service.durationMinutes * 60_000);
+    const endsAt = new Date(input.startsAt.getTime() + combination.durationMinutes * 60_000);
     const cancelToken = generateToken();
     const booking = Appointment.book({
       id,
       startsAt: input.startsAt,
       customerName: name,
-      serviceName: service.name,
+      serviceName: combination.name,
       professionalName,
       timeZone: settings.timeZone,
     });
@@ -70,14 +70,14 @@ export class CreateAppointment {
       id,
       tenantId: input.tenantId,
       professionalId: input.professionalId,
-      serviceId: service.id,
+      services: combination.services,
       customer: { name, phone },
       startsAt: input.startsAt,
       endsAt,
       status: booking.status,
-      priceCents: service.priceCents,
-      serviceName: service.name,
-      durationMinutes: service.durationMinutes,
+      priceCents: combination.priceCents,
+      serviceName: combination.name,
+      durationMinutes: combination.durationMinutes,
       cancelTokenHash: hashToken(cancelToken),
       cancelTokenExpiresAt: endsAt, // o link vale até o fim do atendimento
       source: input.source ?? "PUBLIC_LINK",

@@ -71,7 +71,7 @@ Jornada do cliente
 
 * Acessa o link público da barbearia.
 
-* Seleciona serviço e profissional.
+* Seleciona um ou mais serviços e o profissional.
 
 * Escolhe uma data e um horário disponível.
 
@@ -135,6 +135,8 @@ O estado local será sincronizado por webhooks verificados do Stripe. O retorno 
 Cada serviço terá nome, descrição opcional, preço, duração em minutos e status ativo/inativo.
 
 O proprietário poderá associar serviços aos profissionais que os executam.
+
+O cliente pode escolher até 5 serviços para o mesmo horário (ex.: Corte e Barba). A duração e o preço do agendamento são a soma dos serviços, e só podem atendê-lo os profissionais que executam todos eles (docs/adr/0001-agendamento-com-varios-servicos.md).
 
 ### RN-04 — Disponibilidade
 
@@ -365,7 +367,8 @@ Diagrama conceitual simplificado. As relações reais incluem chaves estrangeira
 | AvailabilityRule      | tenantId, professionalId, weekday, startTime, endTime                                        |
 | AvailabilityException | tenantId, professionalId, date, startTime, endTime, type                                     |
 | Customer              | id, tenantId, name, phone                                                                    |
-| Appointment           | id, tenantId, professionalId, serviceId, customerId, startsAt, endsAt, status, priceSnapshot |
+| Appointment           | id, tenantId, professionalId, customerId, startsAt, endsAt, status, priceSnapshot (soma)     |
+| AppointmentService    | tenantId, appointmentId, serviceId, position, snapshots de nome, preço e duração             |
 | PushSubscription      | id, tenantId, ownerId, endpoint, keys, enabled                                               |
 | OutboxEvent           | id, tenantId, type, payload, status, attempts                                                |
 
@@ -486,7 +489,7 @@ O algoritmo deverá:
 
 * Consultar agendamentos ativos.
 
-* Gerar horários candidatos conforme o intervalo de início configurado.
+* Gerar horários candidatos a partir do início de cada período, avançando pela duração do atendimento arredondada para cima ao múltiplo da grade configurada (docs/adr/0002-grade-anda-pela-duracao.md).
 
 * Verificar se a duração completa do serviço cabe no horário disponível.
 

@@ -3,7 +3,8 @@
 import { CalendarDays, Check, MapPin, Scissors, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/shared/utils/money";
-import type { BookableProfessional, BookableService, BookingConfirmation } from "./booking-api";
+import type { ServiceCombination } from "@/modules/scheduling/domain/service-selection";
+import type { BookableProfessional, BookingConfirmation } from "./booking-api";
 import { BottomBar, DetailRow, StepScreen } from "./booking-chrome";
 import { calendarEvent, reservationCode, slotSummary } from "./booking-labels";
 
@@ -11,18 +12,19 @@ import { calendarEvent, reservationCode, slotSummary } from "./booking-labels";
 export function ReceiptStep(props: {
   shopName: string;
   address: string | null;
-  service: BookableService;
+  selection: ServiceCombination;
   professional: BookableProfessional;
   confirmation: BookingConfirmation;
   timeZone: string;
+  onRestart: () => void;
 }) {
-  const { shopName, address, service, professional, confirmation, timeZone } = props;
+  const { shopName, address, selection, professional, confirmation, timeZone, onRestart } = props;
   const startsAt = new Date(confirmation.startsAt);
 
   function addToCalendar() {
     const ics = calendarEvent({
       id: confirmation.appointmentId,
-      title: `${service.name} · ${shopName}`,
+      title: `${selection.name} · ${shopName}`,
       startsAt,
       endsAt: new Date(confirmation.endsAt),
       location: address,
@@ -44,7 +46,11 @@ export function ReceiptStep(props: {
           <p className="text-body-md text-fg-muted">Te esperamos na {shopName}. Guarde este comprovante.</p>
         </div>
         <dl className="flex w-full flex-col gap-4 rounded-2xl border border-line bg-surface p-4 text-left">
-          <DetailRow icon={<Scissors className="size-5" />} label="Serviço" value={`${service.name} · ${formatBRL(service.priceCents)}`} />
+          <DetailRow
+            icon={<Scissors className="size-5" />}
+            label={selection.services.length > 1 ? "Serviços" : "Serviço"}
+            value={`${selection.name} · ${formatBRL(selection.priceCents)}`}
+          />
           <DetailRow icon={<UserRound className="size-5" />} label="Profissional" value={professional.name} />
           <DetailRow icon={<CalendarDays className="size-5" />} label="Data e horário" value={slotSummary(startsAt, timeZone)} />
           {address ? <DetailRow icon={<MapPin className="size-5" />} label="Endereço" value={address} /> : null}
@@ -57,6 +63,9 @@ export function ReceiptStep(props: {
       <BottomBar>
         <Button variant="secondary" block onClick={addToCalendar}>
           Adicionar ao calendário
+        </Button>
+        <Button variant="outline" block onClick={onRestart}>
+          Voltar ao início
         </Button>
         <a href={confirmation.cancelUrl} className="py-2 text-center text-label-md text-fg-accent">
           Cancelar agendamento

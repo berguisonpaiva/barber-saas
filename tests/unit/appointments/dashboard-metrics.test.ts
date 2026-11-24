@@ -17,7 +17,7 @@ const appointment = (overrides: Partial<MetricAppointment> & { at: string }): Me
   startsAt: new Date(overrides.at),
   status: "CONFIRMED",
   priceCents: 4500,
-  serviceName: "Corte",
+  services: [{ name: "Corte", priceCents: 4500 }],
   professionalId: "p1",
   professionalName: "Rafael",
   customerId: "c1",
@@ -107,14 +107,33 @@ describe("série por dia", () => {
 describe("rankings", () => {
   it("faturamento por serviço em ordem decrescente", () => {
     const ranked = revenueByService([
-      appointment({ at: "2026-11-20T12:00:00Z", serviceName: "Barba", priceCents: 3500 }),
-      appointment({ at: "2026-11-20T13:00:00Z", serviceName: "Corte", priceCents: 4500 }),
-      appointment({ at: "2026-11-20T14:00:00Z", serviceName: "Barba", priceCents: 3500 }),
+      appointment({ at: "2026-11-20T12:00:00Z", services: [{ name: "Barba", priceCents: 3500 }], priceCents: 3500 }),
+      appointment({ at: "2026-11-20T13:00:00Z", services: [{ name: "Corte", priceCents: 4500 }], priceCents: 4500 }),
+      appointment({ at: "2026-11-20T14:00:00Z", services: [{ name: "Barba", priceCents: 3500 }], priceCents: 3500 }),
     ]);
 
     expect(ranked).toEqual([
       { key: "Barba", label: "Barba", value: 7000 },
       { key: "Corte", label: "Corte", value: 4500 },
+    ]);
+  });
+
+  it("um agendamento Corte + Barba fatura para Corte e para Barba, cada um pelo seu preço", () => {
+    const ranked = revenueByService([
+      appointment({
+        at: "2026-11-20T12:00:00Z",
+        priceCents: 8000,
+        services: [
+          { name: "Corte", priceCents: 4500 },
+          { name: "Barba", priceCents: 3500 },
+        ],
+      }),
+      appointment({ at: "2026-11-20T13:00:00Z", services: [{ name: "Corte", priceCents: 4500 }], priceCents: 4500 }),
+    ]);
+
+    expect(ranked).toEqual([
+      { key: "Corte", label: "Corte", value: 9000 },
+      { key: "Barba", label: "Barba", value: 3500 },
     ]);
   });
 

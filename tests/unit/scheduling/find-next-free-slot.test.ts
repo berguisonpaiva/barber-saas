@@ -17,7 +17,7 @@ function setup({ now = MONDAY_8AM, maxAdvanceDays = 30, weekly = { 1: MORNING, 2
   store.addService({ tenantId: TENANT, id: CORTE, name: "Corte", priceCents: 4000, durationMinutes: 30, professionalIds: [RAFAEL] });
   const clock = { now: () => new Date(now) };
   const next = new FindNextFreeSlot(new GetAvailableSlots(store, clock), store, clock);
-  return { store, next: () => next.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceId: CORTE }) };
+  return { store, next: () => next.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceIds: [CORTE] }) };
 }
 
 describe("próximo horário livre do profissional", () => {

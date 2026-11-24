@@ -91,7 +91,7 @@ export function BarbeariaSettingsForm({ action, defaults, timeZones, bookingUrl 
         label="Grade de horários"
         name="slotIntervalMinutes"
         defaultValue={defaults.slotIntervalMinutes}
-        helper="De quanto em quanto tempo um horário pode começar."
+        helper="Passo mínimo entre horários. Atendimentos mais longos andam pela própria duração (60 min: de hora em hora)."
         error={errors?.slotIntervalMinutes?.[0]}
       >
         {withCurrent(SLOT_OPTIONS, defaults.slotIntervalMinutes, (m) => `De ${m} em ${m} min`).map((option) => (

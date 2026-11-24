@@ -8,7 +8,8 @@ export interface MetricAppointment {
   startsAt: Date;
   status: AppointmentStatusName;
   priceCents: number;
-  serviceName: string;
+  /** Serviços do agendamento com o preço gravado de cada um; somados dão priceCents. */
+  services: readonly { name: string; priceCents: number }[];
   professionalId: string;
   professionalName: string;
   customerId: string;
@@ -105,24 +106,21 @@ function rank(totals: Map<string, RankedItem>, limit: number): RankedItem[] {
   return [...sorted.slice(0, limit - 1), { key: "outros", label: "Outros", value: rest }];
 }
 
-function accumulate(
-  appointments: MetricAppointment[],
-  keyOf: (a: MetricAppointment) => [string, string],
-  valueOf: (a: MetricAppointment) => number,
-) {
+function accumulate<T>(entries: readonly T[], keyOf: (entry: T) => [string, string], valueOf: (entry: T) => number) {
   const totals = new Map<string, RankedItem>();
-  appointments.forEach((appointment) => {
-    const [key, label] = keyOf(appointment);
+  entries.forEach((entry) => {
+    const [key, label] = keyOf(entry);
     const item = totals.get(key) ?? { key, label, value: 0 };
-    item.value += valueOf(appointment);
+    item.value += valueOf(entry);
     totals.set(key, item);
   });
   return totals;
 }
 
-/** Faturamento por serviço (nome gravado no agendamento). */
+/** Faturamento por serviço: um agendamento com vários serviços conta para cada um, pelo preço gravado de cada um. */
 export function revenueByService(appointments: MetricAppointment[], limit = 5): RankedItem[] {
-  const totals = accumulate(appointments.filter(isRevenue), (a) => [a.serviceName, a.serviceName], (a) => a.priceCents);
+  const services = appointments.filter(isRevenue).flatMap((appointment) => appointment.services);
+  const totals = accumulate(services, (service) => [service.name, service.name], (service) => service.priceCents);
   return rank(totals, limit);
 }
 

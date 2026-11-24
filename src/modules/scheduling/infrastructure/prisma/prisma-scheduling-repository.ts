@@ -20,15 +20,18 @@ export class PrismaSchedulingRepository implements SchedulingRepository {
     );
   }
 
-  async findOffer(tenantId: string, professionalId: string, serviceId: string): Promise<OfferFacts | null> {
-    const link = await prisma.professionalService.findFirst({
-      where: { tenantId, professionalId, serviceId },
-      select: {
-        service: { select: { id: true, name: true, priceCents: true, durationMinutes: true, active: true } },
-        professional: { select: { name: true, active: true } },
-      },
-    });
-    return link ?? null;
+  async findOffer(tenantId: string, professionalId: string, serviceIds: readonly string[]): Promise<OfferFacts | null> {
+    const [professional, links] = await Promise.all([
+      prisma.professional.findFirst({ where: { tenantId, id: professionalId }, select: { name: true, active: true } }),
+      prisma.professionalService.findMany({
+        where: { tenantId, professionalId, serviceId: { in: [...serviceIds] } },
+        select: { service: { select: { id: true, name: true, priceCents: true, durationMinutes: true, active: true } } },
+      }),
+    ]);
+    const byId = new Map(links.map(({ service }) => [service.id, service]));
+    const services = serviceIds.flatMap((id) => byId.get(id) ?? []);
+    if (!professional || services.length !== serviceIds.length) return null;
+    return { services, professional };
   }
 
   async getDayFacts(params: {

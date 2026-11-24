@@ -38,8 +38,8 @@ Páginas para testar: `/` · `/login` · `/barbearia-do-joao` · `/painel/agenda
 ## API pública (página da barbearia)
 ```
 GET  /api/public/:slug/services
-GET  /api/public/:slug/professionals?serviceId=
-GET  /api/public/:slug/availability?serviceId=&professionalId=&date=AAAA-MM-DD
+GET  /api/public/:slug/professionals?serviceIds=a,b
+GET  /api/public/:slug/availability?serviceIds=a,b&professionalId=&date=AAAA-MM-DD
 POST /api/public/:slug/appointments
 POST /api/public/:slug/appointments/cancel
 POST /api/stripe/webhook

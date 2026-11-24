@@ -95,8 +95,21 @@ async function AppointmentDetail({ params }: { params: Promise<{ id: string }> }
           {WEEKDAY_LONG[day.weekday]}, {dayMonth(appointment.startsAt, timeZone)} · {clockTime(appointment.startsAt, timeZone)}–
           {clockTime(appointment.endsAt, timeZone)}
         </DetailRow>
-        <DetailRow icon={<Scissors aria-hidden />} label="Serviço">
-          {appointment.serviceNameSnapshot}
+        <DetailRow icon={<Scissors aria-hidden />} label={appointment.services.length > 1 ? "Serviços" : "Serviço"}>
+          {appointment.services.length > 1 ? (
+            <span className="flex flex-col">
+              {appointment.services.map((service) => (
+                <span key={service.serviceId}>
+                  {service.serviceNameSnapshot}{" "}
+                  <span className="text-body-sm text-fg-muted">
+                    · {formatBRL(service.priceSnapshotCents)} · {service.durationSnapshotMinute} min
+                  </span>
+                </span>
+              ))}
+            </span>
+          ) : (
+            appointment.serviceNameSnapshot
+          )}
         </DetailRow>
         <DetailRow icon={<UserRound aria-hidden />} label="Profissional">
           {appointment.professional.name}

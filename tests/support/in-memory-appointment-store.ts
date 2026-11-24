@@ -107,15 +107,16 @@ export class InMemoryAppointmentStore implements AppointmentRepository, Scheduli
     return this.barbearias.get(tenantId) ?? null;
   }
 
-  async findOffer(tenantId: string, professionalId: string, serviceId: string): Promise<OfferFacts | null> {
-    const service = this.services.get(key(tenantId, serviceId));
+  async findOffer(tenantId: string, professionalId: string, serviceIds: readonly string[]): Promise<OfferFacts | null> {
     const professional = this.professionals.get(key(tenantId, professionalId));
-    if (!service || !professional || !service.professionalIds.includes(professionalId)) return null;
-    const { name, priceCents, durationMinutes, active = true } = service;
-    return {
-      service: { id: serviceId, name, priceCents, durationMinutes, active },
-      professional: { name: professional.name, active: professional.active ?? true },
-    };
+    const services = serviceIds.flatMap((id) => {
+      const service = this.services.get(key(tenantId, id));
+      if (!service?.professionalIds.includes(professionalId)) return [];
+      const { name, priceCents, durationMinutes, active = true } = service;
+      return [{ id, name, priceCents, durationMinutes, active }];
+    });
+    if (!professional || services.length !== serviceIds.length) return null;
+    return { services, professional: { name: professional.name, active: professional.active ?? true } };
   }
 
   async getDayFacts(params: {

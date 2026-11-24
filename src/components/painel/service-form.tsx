@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFormAction } from "@/components/painel/use-form-action";
 import { Button } from "@/components/ui/button";
 import { CheckChip } from "@/components/ui/chip";
@@ -8,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 import { FormMessage } from "@/components/painel/form-message";
 import type { FormState } from "@/shared/forms/form-state";
+import { maskPriceInput } from "@/shared/utils/money";
 
 export type ServiceFormValues = {
   name: string;
@@ -30,6 +32,7 @@ const EMPTY: ServiceFormValues = { name: "", description: "", price: "", duratio
 /** Tela P4: nome, preço, duração, quem realiza e disponível online. */
 export function ServiceForm({ action, professionals, defaults = EMPTY, submitLabel }: ServiceFormProps) {
   const { state, onSubmit, pending } = useFormAction(action);
+  const [price, setPrice] = useState(defaults.price);
   const errors = state?.fieldErrors;
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5">
@@ -47,9 +50,10 @@ export function ServiceForm({ action, professionals, defaults = EMPTY, submitLab
           label="Preço"
           name="price"
           prefix="R$"
-          inputMode="decimal"
-          placeholder="45,00"
-          defaultValue={defaults.price}
+          inputMode="numeric"
+          placeholder="0,00"
+          value={price}
+          onChange={(event) => setPrice(maskPriceInput(event.target.value))}
           error={errors?.price?.[0]}
           required
         />

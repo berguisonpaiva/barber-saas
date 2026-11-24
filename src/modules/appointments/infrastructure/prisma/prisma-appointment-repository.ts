@@ -26,7 +26,6 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
             id: record.id,
             tenantId: record.tenantId,
             professionalId: record.professionalId,
-            serviceId: record.serviceId,
             customerId: customer.id,
             startsAt: record.startsAt,
             endsAt: record.endsAt,
@@ -38,6 +37,15 @@ export class PrismaAppointmentRepository implements AppointmentRepository {
             customerNameSnapshot: record.customer.name,
             cancelTokenHash: record.cancelTokenHash,
             cancelTokenExpiresAt: record.cancelTokenExpiresAt,
+            services: {
+              create: record.services.map((service, position) => ({
+                serviceId: service.id,
+                position,
+                serviceNameSnapshot: service.name,
+                priceSnapshotCents: service.priceCents,
+                durationSnapshotMinute: service.durationMinutes,
+              })),
+            },
           },
           select: { id: true },
         });

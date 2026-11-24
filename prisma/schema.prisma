@@ -69,13 +69,13 @@ enum OutboxStatus {
 // ──────────────────────────── Tenancy ────────────────────────────
 
 model Tenant {
-  id       String       @id @default(uuid()) @db.Uuid
-  name     String
-  slug     String       @unique
-  timezone String       @default("America/Fortaleza")
-  status   TenantStatus @default(ONBOARDING)
-  address  String?
-  phone    String?
+  id            String       @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String       @unique
+  timezone      String       @default("America/Fortaleza")
+  status        TenantStatus @default(ONBOARDING)
+  address       String?
+  phone         String?
   /// Chave da foto de capa no storage S3 (null = sem capa).
   coverImageKey String?
 
@@ -97,6 +97,7 @@ model Tenant {
   availabilityExceptions AvailabilityException[]
   customers              Customer[]
   appointments           Appointment[]
+  appointmentServices    AppointmentService[]
   pushSubscriptions      PushSubscription[]
   outboxEvents           OutboxEvent[]
 }
@@ -161,7 +162,7 @@ model Service {
 
   tenant        Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   professionals ProfessionalService[]
-  appointments  Appointment[]
+  appointments  AppointmentService[]
 
   @@unique([tenantId, id])
   @@index([tenantId, active])
@@ -259,7 +260,6 @@ model Appointment {
   id             String            @id @default(uuid()) @db.Uuid
   tenantId       String            @db.Uuid
   professionalId String            @db.Uuid
-  serviceId      String            @db.Uuid
   customerId     String            @db.Uuid
   startsAt       DateTime          @db.Timestamptz(3)
   endsAt         DateTime          @db.Timestamptz(3)
@@ -281,14 +281,34 @@ model Appointment {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  professional Professional @relation(fields: [tenantId, professionalId], references: [tenantId, id], onDelete: Restrict)
-  service      Service      @relation(fields: [tenantId, serviceId], references: [tenantId, id], onDelete: Restrict)
-  customer     Customer     @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Restrict)
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  professional Professional         @relation(fields: [tenantId, professionalId], references: [tenantId, id], onDelete: Restrict)
+  customer     Customer             @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Restrict)
+  services     AppointmentService[]
 
+  @@unique([tenantId, id])
   @@index([tenantId, professionalId, startsAt])
   @@index([tenantId, startsAt])
   @@index([tenantId, customerId])
+}
+
+/// Serviços de um agendamento, na ordem escolhida pelo cliente, com o que valia na hora da marcação.
+model AppointmentService {
+  tenantId               String @db.Uuid
+  appointmentId          String @db.Uuid
+  serviceId              String @db.Uuid
+  position               Int
+  serviceNameSnapshot    String
+  priceSnapshotCents     Int
+  durationSnapshotMinute Int
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointment Appointment @relation(fields: [tenantId, appointmentId], references: [tenantId, id], onDelete: Cascade)
+  service     Service     @relation(fields: [tenantId, serviceId], references: [tenantId, id], onDelete: Restrict)
+
+  @@id([tenantId, appointmentId, serviceId])
+  @@unique([tenantId, appointmentId, position])
+  @@index([tenantId, serviceId])
 }
 
 // ───────────────────────── Notifications ─────────────────────────

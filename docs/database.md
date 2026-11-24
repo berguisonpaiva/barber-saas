@@ -22,7 +22,8 @@ PostgreSQL 17 · Prisma 7.10 · schema em [`prisma/schema.prisma`](../prisma/sch
 | AvailabilityRule | professionalId, weekday 0–6, startMinute, endMinute | Minutos desde 00:00 local; intervalo = duas regras |
 | AvailabilityException | professionalId, date, startMinute?, endMinute?, type, reason | Sem horários = dia inteiro. type: DAY_OFF · BLOCK |
 | Customer | name, phone (E.164) | Único por (tenantId, phone) |
-| Appointment | professionalId, serviceId, customerId, startsAt, endsAt, status, source, priceSnapshotCents, serviceNameSnapshot, durationSnapshotMinute, cancelTokenHash, cancelTokenExpiresAt, canceledAt, canceledBy | status: CONFIRMED · COMPLETED · CANCELED · NO_SHOW |
+| Appointment | professionalId, customerId, startsAt, endsAt, status, source, priceSnapshotCents, serviceNameSnapshot, durationSnapshotMinute, cancelTokenHash, cancelTokenExpiresAt, canceledAt, canceledBy | status: CONFIRMED · COMPLETED · CANCELED · NO_SHOW. Snapshots = combinação dos serviços ("Corte + Barba", soma de preço e duração) |
+| AppointmentService | (tenantId, appointmentId, serviceId), position, serviceNameSnapshot, priceSnapshotCents, durationSnapshotMinute | Serviços de cada agendamento, na ordem escolhida (ADR 0001) |
 | PushSubscription | ownerId, endpoint (único), p256dh, auth, enabled, failureCount, lastSuccessAt | |
 | OutboxEvent | type, payload (json), status, attempts, availableAt, lastError | PENDING · PROCESSING · DONE · FAILED |
 | RateLimitBucket | key, count, resetAt | Rate limit sem Redis |
@@ -48,6 +49,13 @@ ALTER TABLE "AvailabilityRule" ADD CONSTRAINT "AvailabilityRule_range_check"
   CHECK ("weekday" BETWEEN 0 AND 6 AND "startMinute" >= 0 AND "endMinute" <= 1440 AND "endMinute" > "startMinute");
 ```
 Violação da EXCLUDE retorna SQLSTATE `23P01`, convertida em `SlotUnavailableError` (HTTP 409).
+
+A migração `20261124190000_appointment_services` acrescenta, também por SQL (e em `prisma/custom-constraints.sql`, usado pelo banco de teste):
+
+```sql
+ALTER TABLE "AppointmentService" ADD CONSTRAINT "AppointmentService_values_check"
+  CHECK ("position" >= 0 AND "priceSnapshotCents" >= 0 AND "durationSnapshotMinute" > 0);
+```
 
 ## Comandos
 | Comando | Uso |

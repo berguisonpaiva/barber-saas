@@ -51,8 +51,8 @@ function setup({
   });
 
   const slots = new GetAvailableSlots(store, { now: () => new Date(now) });
-  const freeTimes = async (date = MONDAY, serviceId = CORTE) =>
-    localTimes((await slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceId, date })).slots);
+  const freeTimes = async (date = MONDAY, serviceIds = [CORTE]) =>
+    localTimes((await slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceIds, date })).slots);
   const occupy = (from: string, to: string, status: "CONFIRMED" | "COMPLETED" | "NO_SHOW" | "CANCELED" = "CONFIRMED") =>
     store.addAppointment({
       tenantId: TENANT,
@@ -81,15 +81,15 @@ describe("Horário livre", () => {
   it("devolve os instantes em UTC (09:00 em Fortaleza = 12:00Z)", async () => {
     const { slots } = setup();
 
-    const result = await slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceId: CORTE, date: MONDAY });
+    const result = await slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceIds: [CORTE], date: MONDAY });
 
     expect(result.slots[0].toISOString()).toBe("2026-11-23T12:00:00.000Z");
   });
 
-  it("um serviço de 60 min não atravessa o Intervalo", async () => {
+  it("um serviço de 60 min anda de hora em hora e não atravessa o Intervalo", async () => {
     const { freeTimes } = setup();
 
-    expect(await freeTimes(MONDAY, CORTE_E_BARBA)).toEqual(["09:00", "09:30", "11:00"]);
+    expect(await freeTimes(MONDAY, [CORTE_E_BARBA])).toEqual(["09:00", "11:00"]);
   });
 
   it("um horário que termina quando um Confirmado começa não conflita com ele", async () => {
@@ -102,10 +102,24 @@ describe("Horário livre", () => {
     expect(times).not.toContain("10:00");
   });
 
-  it("a Grade de horários pode ser menor que a duração do serviço (de 15 em 15)", async () => {
+  it("a Grade de horários anda pela duração: 30 min numa grade de 15 vai de 30 em 30", async () => {
     const { freeTimes } = setup({ slotIntervalMinutes: 15, monday: [range("09:00", "10:00")] });
 
-    expect(await freeTimes()).toEqual(["09:00", "09:15", "09:30"]);
+    expect(await freeTimes()).toEqual(["09:00", "09:30"]);
+  });
+
+  it("duração fora da grade arredonda para cima: 45 min numa grade de 30 vai de hora em hora", async () => {
+    const { store, freeTimes } = setup({ monday: [range("09:00", "12:00")] });
+    store.addService({ tenantId: TENANT, id: "svc-45", name: "Corte longo", priceCents: 5000, durationMinutes: 45, professionalIds: [RAFAEL] });
+
+    expect(await freeTimes(MONDAY, ["svc-45"])).toEqual(["09:00", "10:00", "11:00"]);
+  });
+
+  it("serviço menor que a grade continua na grade: 15 min numa grade de 30", async () => {
+    const { store, freeTimes } = setup({ monday: [range("09:00", "10:00")] });
+    store.addService({ tenantId: TENANT, id: "svc-15", name: "Pezinho", priceCents: 1500, durationMinutes: 15, professionalIds: [RAFAEL] });
+
+    expect(await freeTimes(MONDAY, ["svc-15"])).toEqual(["09:00", "09:30"]);
   });
 
   it("a Grade de horários começa no início de cada período do expediente", async () => {
@@ -166,8 +180,63 @@ describe("Horário livre", () => {
     });
 
     await expect(
-      slots.execute({ tenantId: TENANT, professionalId: "prof-bruno", serviceId: "svc-sobrancelha", date: MONDAY }),
+      slots.execute({ tenantId: TENANT, professionalId: "prof-bruno", serviceIds: ["svc-sobrancelha"], date: MONDAY }),
     ).rejects.toThrow(NotFoundError);
+  });
+
+  it("Corte e Barba escolhidos juntos somam a duração: a grade anda de hora em hora e não atravessa o Intervalo", async () => {
+    const { store, freeTimes } = setup();
+    store.addService({ tenantId: TENANT, id: "svc-barba", name: "Barba", priceCents: 2500, durationMinutes: 30, professionalIds: [RAFAEL] });
+
+    expect(await freeTimes(MONDAY, [CORTE, "svc-barba"])).toEqual(["09:00", "11:00"]);
+  });
+
+  it("devolve os serviços escolhidos combinados: nome na ordem, preço e duração somados", async () => {
+    const { store, slots } = setup();
+    store.addService({ tenantId: TENANT, id: "svc-barba", name: "Barba", priceCents: 2500, durationMinutes: 20, professionalIds: [RAFAEL] });
+
+    const { combination } = await slots.execute({
+      tenantId: TENANT,
+      professionalId: RAFAEL,
+      serviceIds: ["svc-barba", CORTE],
+      date: MONDAY,
+    });
+
+    expect(combination).toMatchObject({ name: "Barba + Corte", priceCents: 6500, durationMinutes: 50 });
+  });
+
+  it("se o profissional não faz um dos serviços escolhidos, a combinação fica indisponível", async () => {
+    const { store, slots } = setup();
+    store.addService({ tenantId: TENANT, id: "svc-barba", name: "Barba", priceCents: 2500, durationMinutes: 20, professionalIds: [] });
+
+    await expect(
+      slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceIds: [CORTE, "svc-barba"], date: MONDAY }),
+    ).rejects.toThrow(NotFoundError);
+  });
+
+  it("um serviço Desativado entre os escolhidos deixa a combinação indisponível", async () => {
+    const { store, slots } = setup();
+    store.addService({
+      tenantId: TENANT,
+      id: "svc-barba",
+      name: "Barba",
+      priceCents: 2500,
+      durationMinutes: 20,
+      professionalIds: [RAFAEL],
+      active: false,
+    });
+
+    await expect(
+      slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceIds: [CORTE, "svc-barba"], date: MONDAY }),
+    ).rejects.toThrow(NotFoundError);
+  });
+
+  it("sem nenhum serviço escolhido, recusa como dado inválido", async () => {
+    const { slots } = setup();
+
+    await expect(slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceIds: [], date: MONDAY })).rejects.toThrow(
+      ValidationError,
+    );
   });
 
   it("um profissional que não executa o serviço responde serviço indisponível", async () => {
@@ -175,7 +244,7 @@ describe("Horário livre", () => {
     store.addProfessional({ tenantId: TENANT, id: "prof-bruno", name: "Bruno", weekly: { 1: PRD_EXPEDIENTE } });
 
     await expect(
-      slots.execute({ tenantId: TENANT, professionalId: "prof-bruno", serviceId: CORTE, date: MONDAY }),
+      slots.execute({ tenantId: TENANT, professionalId: "prof-bruno", serviceIds: [CORTE], date: MONDAY }),
     ).rejects.toThrow(NotFoundError);
   });
 
@@ -189,7 +258,7 @@ describe("Horário livre", () => {
     const { slots } = setup();
 
     await expect(
-      slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceId: CORTE, date: "2026-02-30" }),
+      slots.execute({ tenantId: TENANT, professionalId: RAFAEL, serviceIds: [CORTE], date: "2026-02-30" }),
     ).rejects.toThrow(ValidationError);
   });
 

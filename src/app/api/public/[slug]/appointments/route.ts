@@ -20,7 +20,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/public/[slu
     const result = await createAppointment.execute({
       tenantId: tenant.id,
       professionalId: body.professionalId,
-      serviceId: body.serviceId,
+      serviceIds: body.serviceIds,
       startsAt: body.startsAt,
       customer: body.customer,
     });

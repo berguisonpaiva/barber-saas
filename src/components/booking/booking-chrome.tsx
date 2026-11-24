@@ -45,22 +45,24 @@ export function StepScreen({ children }: { children: ReactNode }) {
   return <div className="fixed inset-0 z-20 mx-auto flex max-w-md flex-col overflow-y-auto bg-canvas">{children}</div>;
 }
 
-/** Cartão de escolha (serviço ou profissional) com marcação à direita. */
+/** Cartão de escolha (serviço ou profissional) com marcação à direita: única (radio) ou múltipla (checkbox). */
 export function ChoiceCard({
   selected,
   onSelect,
   disabled = false,
+  kind = "radio",
   children,
 }: {
   selected: boolean;
   onSelect: () => void;
   disabled?: boolean;
+  kind?: "radio" | "checkbox";
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
-      role="radio"
+      role={kind}
       aria-checked={selected}
       disabled={disabled}
       onClick={onSelect}
@@ -73,7 +75,8 @@ export function ChoiceCard({
       <span
         aria-hidden
         className={cn(
-          "grid size-6 shrink-0 place-items-center rounded-full border-2",
+          "grid size-6 shrink-0 place-items-center border-2",
+          kind === "radio" ? "rounded-full" : "rounded-sm",
           selected ? "border-accent bg-accent text-on-accent" : "border-line-strong",
         )}
       >

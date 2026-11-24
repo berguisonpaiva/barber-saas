@@ -24,6 +24,18 @@ describe("formulário de serviço", () => {
     expect(serviceSchema.parse({ ...service, price: "70,5" }).price).toBe(7050);
   });
 
+  it("preço com separador de milhar vira centavos: 1.500,00 → 150000", () => {
+    expect(serviceSchema.parse({ ...service, price: "1.500,00" }).price).toBe(150000);
+  });
+
+  it("preço com ponto decimal continua aceito: 40.00 → 4000", () => {
+    expect(serviceSchema.parse({ ...service, price: "40.00" }).price).toBe(4000);
+  });
+
+  it("recusa preço com texto", () => {
+    expect(serviceSchema.safeParse({ ...service, price: "R$ abc" }).success).toBe(false);
+  });
+
   it("descrição vazia vira undefined", () => {
     expect(serviceSchema.parse({ ...service, description: "  " }).description).toBeUndefined();
   });
