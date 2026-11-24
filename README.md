@@ -31,7 +31,7 @@ Páginas para testar: `/` · `/login` · `/barbearia-do-joao` · `/painel/agenda
 | `npm run typecheck` / `lint` / `test` | TypeScript, ESLint, Vitest |
 | `npm test` com `DATABASE_URL_TEST` e `S3_TEST_ENDPOINT` | inclui os testes de integração (Postgres `*_test` e storage S3) |
 | `npm run storage:up` / `storage:init` | storage S3 local (RustFS) e criação do bucket |
-| `npm run test:e2e` | Playwright (perfil mobile) |
+| `npm run test:e2e` | Playwright (perfil mobile, WebKit) em `http://localhost:3100`; troque com `E2E_PORT` |
 | `npm run db:migrate` | nova migração após mudar o `schema.prisma` |
 | `npm run db:studio` | Prisma Studio |
 

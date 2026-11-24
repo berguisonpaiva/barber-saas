@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { serviceSchema } from "@/modules/catalog/presentation/schemas/service";
 import { professionalSchema } from "@/modules/professionals/presentation/schemas/professional";
 import { availabilityExceptionSchema, weeklyScheduleSchema } from "@/modules/scheduling/presentation/schemas/availability";
+import { customerSchema } from "@/modules/customers/presentation/schemas/customer";
+import {
+  barbeariaSettingsSchema,
+  BRAZIL_TIME_ZONES,
+  timeZoneOptions,
+} from "@/modules/tenants/presentation/schemas/barbearia-settings";
 
 const service = { name: "Corte", price: "45,00", durationMinutes: "30", professionalIds: [] };
 
@@ -65,5 +71,64 @@ describe("formulário de folga/bloqueio", () => {
     const parsed = availabilityExceptionSchema.parse({ type: "BLOCK", date: "2026-11-24", start: "14:00", end: "16:00" });
 
     expect(parsed).toMatchObject({ start: 840, end: 960 });
+  });
+});
+
+const settings = {
+  name: "Barbearia do João",
+  address: "",
+  phone: "",
+  timezone: "America/Fortaleza",
+  slotIntervalMinutes: "15",
+  minAdvanceMinutes: "60",
+  maxAdvanceDays: "30",
+  cancellationWindowMinutes: "120",
+};
+
+describe("formulário da barbearia", () => {
+  it("campos numéricos do formulário viram números e telefone vazio vira null", () => {
+    expect(barbeariaSettingsSchema.parse(settings)).toMatchObject({
+      phone: null,
+      slotIntervalMinutes: 15,
+      minAdvanceMinutes: 60,
+      maxAdvanceDays: 30,
+      cancellationWindowMinutes: 120,
+    });
+  });
+
+  it("telefone com máscara é gravado no formato internacional", () => {
+    expect(barbeariaSettingsSchema.parse({ ...settings, phone: "(85) 3333-4444" }).phone).toBe("+558533334444");
+  });
+
+  it("recusa telefone sem DDD", () => {
+    const result = barbeariaSettingsSchema.safeParse({ ...settings, phone: "3333-4444" });
+
+    expect(result.error?.issues[0]).toMatchObject({ path: ["phone"], message: "Telefone inválido. Use DDD + número." });
+  });
+
+  it("recusa fuso que não existe", () => {
+    expect(barbeariaSettingsSchema.safeParse({ ...settings, timezone: "America/Atlantida" }).success).toBe(false);
+  });
+
+  it("recusa grade de horários fora de 5 a 120 minutos", () => {
+    expect(barbeariaSettingsSchema.safeParse({ ...settings, slotIntervalMinutes: "4" }).success).toBe(false);
+    expect(barbeariaSettingsSchema.safeParse({ ...settings, slotIntervalMinutes: "121" }).success).toBe(false);
+  });
+
+  it("um fuso salvo fora da lista do Brasil continua entre as opções", () => {
+    expect(timeZoneOptions("Europe/Lisbon").at(-1)).toEqual({ id: "Europe/Lisbon", label: "Europe/Lisbon" });
+    expect(timeZoneOptions("America/Fortaleza")).toBe(BRAZIL_TIME_ZONES);
+  });
+});
+
+describe("formulário de cliente", () => {
+  it("WhatsApp com máscara é gravado no formato internacional", () => {
+    expect(customerSchema.parse({ name: "Carlos", phone: "(85) 99876-5432" }).phone).toBe("+5585998765432");
+  });
+
+  it("recusa WhatsApp inválido", () => {
+    const result = customerSchema.safeParse({ name: "Carlos", phone: "123" });
+
+    expect(result.error?.issues[0]).toMatchObject({ path: ["phone"], message: "WhatsApp inválido. Use DDD + número." });
   });
 });

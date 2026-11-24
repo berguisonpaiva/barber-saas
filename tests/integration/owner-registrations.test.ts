@@ -19,6 +19,10 @@ type Modules = {
   getWeeklySchedule: typeof import("@/modules/scheduling/application/use-cases/manage-weekly-schedule").getWeeklySchedule;
   exceptions: typeof import("@/modules/scheduling/application/use-cases/manage-availability-exceptions");
   updateCustomer: typeof import("@/modules/customers/application/use-cases/update-customer").updateCustomer;
+  listCustomers: typeof import("@/modules/customers/application/use-cases/list-customers").listCustomers;
+  getCustomerHistory: typeof import("@/modules/customers/application/use-cases/get-customer-history").getCustomerHistory;
+  updateProfessional: typeof import("@/modules/professionals/application/use-cases/update-professional").updateProfessional;
+  settings: typeof import("@/modules/tenants/application/use-cases/manage-barbearia-settings");
   getDashboard: typeof import("@/modules/appointments/application/use-cases/get-dashboard").getDashboard;
 };
 
@@ -40,6 +44,10 @@ describe.skipIf(!url)("cadastros do proprietário (Postgres)", () => {
       getWeeklySchedule: (await import("@/modules/scheduling/application/use-cases/manage-weekly-schedule")).getWeeklySchedule,
       exceptions: await import("@/modules/scheduling/application/use-cases/manage-availability-exceptions"),
       updateCustomer: (await import("@/modules/customers/application/use-cases/update-customer")).updateCustomer,
+      listCustomers: (await import("@/modules/customers/application/use-cases/list-customers")).listCustomers,
+      getCustomerHistory: (await import("@/modules/customers/application/use-cases/get-customer-history")).getCustomerHistory,
+      updateProfessional: (await import("@/modules/professionals/application/use-cases/update-professional")).updateProfessional,
+      settings: await import("@/modules/tenants/application/use-cases/manage-barbearia-settings"),
       getDashboard: (await import("@/modules/appointments/application/use-cases/get-dashboard")).getDashboard,
     };
   });
@@ -165,6 +173,46 @@ describe.skipIf(!url)("cadastros do proprietário (Postgres)", () => {
       expect(await prisma.availabilityRule.count({ where: { professionalId: professional.id } })).toBe(0);
       expect(await prisma.professionalService.count({ where: { professionalId: professional.id } })).toBe(0);
     });
+
+    const linkedServices = async (professionalId: string) =>
+      (await prisma.professionalService.findMany({ where: { professionalId } })).map((link) => link.serviceId).sort();
+
+    it("editar troca nome, situação e os serviços que ele realiza", async () => {
+      const { id: tenantId } = await newTenant();
+      const [corte, barba] = [await m.createService(tenantId, serviceInput()), await m.createService(tenantId, serviceInput())];
+      const professional = await m.createProfessional(tenantId, { name: "Rafael", serviceIds: [corte.id], active: true });
+
+      await m.updateProfessional(tenantId, professional.id, { name: "Rafael Lima", serviceIds: [barba.id], active: false });
+
+      expect(await prisma.professional.findUniqueOrThrow({ where: { id: professional.id } })).toMatchObject({
+        name: "Rafael Lima",
+        active: false,
+      });
+      expect(await linkedServices(professional.id)).toEqual([barba.id]);
+    });
+
+    it("editar com serviço de outra barbearia é recusado e nada muda", async () => {
+      const [owner, other] = [await newTenant(), await newTenant()];
+      const corte = await m.createService(owner.id, serviceInput());
+      const foreign = await m.createService(other.id, serviceInput());
+      const professional = await m.createProfessional(owner.id, { name: "Rafael", serviceIds: [corte.id], active: true });
+
+      await expect(
+        m.updateProfessional(owner.id, professional.id, { name: "Outro", serviceIds: [foreign.id], active: true }),
+      ).rejects.toBeInstanceOf(ValidationError);
+
+      expect((await prisma.professional.findUniqueOrThrow({ where: { id: professional.id } })).name).toBe("Rafael");
+      expect(await linkedServices(professional.id)).toEqual([corte.id]);
+    });
+
+    it("outra barbearia não edita o profissional", async () => {
+      const [owner, intruder] = [await newTenant(), await newTenant()];
+      const professional = await m.createProfessional(owner.id, { name: "Rafael", serviceIds: [], active: true });
+
+      await expect(
+        m.updateProfessional(intruder.id, professional.id, { name: "Invasor", serviceIds: [], active: true }),
+      ).rejects.toBeInstanceOf(NotFoundError);
+    });
   });
 
   describe("expediente", () => {
@@ -249,6 +297,111 @@ describe.skipIf(!url)("cadastros do proprietário (Postgres)", () => {
       await expect(m.updateCustomer(tenantId, bruno.id, { name: "Bruno", phone: "+5585911112222" })).rejects.toBeInstanceOf(
         ConflictError,
       );
+    });
+
+    async function customerWithVisits(tenantId: string, name: string, phone: string) {
+      const service = await m.createService(tenantId, serviceInput());
+      const professional = await m.createProfessional(tenantId, { name: "Rafael", serviceIds: [service.id], active: true });
+      const customer = await prisma.customer.create({ data: { tenantId, name, phone } });
+      const visit = (startsAt: string, status: "COMPLETED" | "NO_SHOW" | "CANCELED" | "CONFIRMED", priceCents = 4500) =>
+        prisma.appointment.create({
+          data: {
+            tenantId,
+            professionalId: professional.id,
+            serviceId: service.id,
+            customerId: customer.id,
+            startsAt: new Date(startsAt),
+            endsAt: new Date(new Date(startsAt).getTime() + 30 * 60_000),
+            status,
+            priceSnapshotCents: priceCents,
+            serviceNameSnapshot: "Corte",
+            durationSnapshotMinute: 30,
+            customerNameSnapshot: name,
+          },
+        });
+      return { customer, visit };
+    }
+
+    it("a lista traz a última visita já ocorrida e não cancelada, e a contagem de agendamentos", async () => {
+      const { id: tenantId } = await newTenant();
+      const { customer, visit } = await customerWithVisits(tenantId, "Carlos", "+5585998760001");
+      await visit("2030-03-01T12:00:00Z", "COMPLETED");
+      await visit("2030-03-03T12:00:00Z", "CANCELED");
+      await visit("2030-03-10T12:00:00Z", "CONFIRMED");
+
+      const { customers } = await m.listCustomers(tenantId, "", FIXED_NOW);
+
+      expect(customers).toEqual([
+        expect.objectContaining({ id: customer.id, appointmentCount: 3, lastVisitAt: new Date("2030-03-01T12:00:00Z") }),
+      ]);
+    });
+
+    it("busca por parte do nome ou do WhatsApp, só dentro da barbearia", async () => {
+      const [owner, other] = [await newTenant(), await newTenant()];
+      const ana = await prisma.customer.create({ data: { tenantId: owner.id, name: "Ana Souza", phone: "+5585911110000" } });
+      await prisma.customer.create({ data: { tenantId: owner.id, name: "Bruno", phone: "+5585922220000" } });
+      await prisma.customer.create({ data: { tenantId: other.id, name: "Ana Outra", phone: "+5585911110001" } });
+
+      const ids = async (query: string) => (await m.listCustomers(owner.id, query)).customers.map((customer) => customer.id);
+
+      expect(await ids("souza")).toEqual([ana.id]);
+      expect(await ids("(85) 91111")).toEqual([ana.id]);
+      expect(await ids("ana")).toEqual([ana.id]);
+    });
+
+    it("o histórico soma atendidos, faltas e cancelados, e o valor só dos atendidos", async () => {
+      const { id: tenantId } = await newTenant();
+      const { customer, visit } = await customerWithVisits(tenantId, "Carlos", "+5585998760002");
+      await visit("2030-03-01T12:00:00Z", "COMPLETED", 4500);
+      await visit("2030-03-02T12:00:00Z", "COMPLETED", 3000);
+      await visit("2030-03-03T12:00:00Z", "NO_SHOW");
+      await visit("2030-03-04T12:00:00Z", "CANCELED");
+
+      const history = await m.getCustomerHistory(tenantId, customer.id);
+
+      expect(history.stats).toEqual({ total: 4, completed: 2, noShow: 1, canceled: 1, completedCents: 7500 });
+      expect(history.appointments.map((appointment) => appointment.status)).toEqual(["CANCELED", "NO_SHOW", "COMPLETED", "COMPLETED"]);
+    });
+
+    it("outra barbearia não abre o histórico do cliente", async () => {
+      const [owner, intruder] = [await newTenant(), await newTenant()];
+      const customer = await prisma.customer.create({ data: { tenantId: owner.id, name: "Carlos", phone: "+5585998760003" } });
+
+      await expect(m.getCustomerHistory(intruder.id, customer.id)).rejects.toBeInstanceOf(NotFoundError);
+    });
+  });
+
+  describe("dados da barbearia", () => {
+    it("salvar as configurações muda os dados e as regras, mas nunca o link de agendamento", async () => {
+      const { id: tenantId } = await newTenant();
+      const { slug } = await m.settings.getBarbeariaSettings(tenantId);
+
+      await m.settings.updateBarbeariaSettings(tenantId, {
+        name: "Barbearia Nova",
+        address: undefined,
+        phone: "+558533334444",
+        timezone: "America/Manaus",
+        slotIntervalMinutes: 20,
+        minAdvanceMinutes: 30,
+        maxAdvanceDays: 15,
+        cancellationWindowMinutes: 60,
+      });
+
+      expect(await m.settings.getBarbeariaSettings(tenantId)).toEqual({
+        name: "Barbearia Nova",
+        slug,
+        address: null,
+        phone: "+558533334444",
+        timezone: "America/Manaus",
+        slotIntervalMinutes: 20,
+        minAdvanceMinutes: 30,
+        maxAdvanceDays: 15,
+        cancellationWindowMinutes: 60,
+      });
+    });
+
+    it("barbearia inexistente não é encontrada", async () => {
+      await expect(m.settings.getBarbeariaSettings(randomUUID())).rejects.toBeInstanceOf(NotFoundError);
     });
   });
 
