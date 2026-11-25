@@ -121,7 +121,7 @@ async function DashboardContent({ searchParams }: { searchParams: Promise<Record
         <p className="text-body-sm text-fg-muted">Confirmados e atendidos, pelo preço de cada agendamento.</p>
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
           label="Agendamentos"
           value={String(totals.booked)}
@@ -156,46 +156,48 @@ async function DashboardContent({ searchParams }: { searchParams: Promise<Record
         />
       </Card>
 
-      <Card title="Situação dos agendamentos" subtitle={`${totals.booked + totals.canceled} no período`}>
-        <SegmentedBar
-          title="Situação dos agendamentos"
-          segments={[
-            { key: "COMPLETED", label: "Atendidos", value: dashboard.statuses.COMPLETED, colorClass: "bg-success" },
-            { key: "CONFIRMED", label: "Confirmados", value: dashboard.statuses.CONFIRMED, colorClass: "bg-chart" },
-            { key: "NO_SHOW", label: "Faltou", value: dashboard.statuses.NO_SHOW, colorClass: "bg-chart-neutral" },
-            { key: "CANCELED", label: "Cancelados", value: dashboard.statuses.CANCELED, colorClass: "bg-danger" },
-          ]}
-        />
-      </Card>
-
-      <Card title="Faturamento por serviço">
-        <BarList
-          title="Faturamento por serviço"
-          empty="Nenhum faturamento no período."
-          items={dashboard.byService.map((item) => ({ ...item, display: formatBRL(item.value) }))}
-        />
-      </Card>
-
-      <Card title="Agendamentos por profissional">
-        <BarList
-          title="Agendamentos por profissional"
-          empty="Nenhum agendamento no período."
-          items={dashboard.byProfessional.map((item) => ({ ...item, display: String(item.value) }))}
-        />
-      </Card>
-
-      <Card title="Horários de pico" subtitle="Hora de início dos agendamentos, no fuso da barbearia.">
-        {dashboard.byHour.length ? (
-          <ColumnChart
-            title="Agendamentos por hora de início"
-            columns={hourColumns(dashboard)}
-            unit="agendamentos"
-            axisEvery={dashboard.byHour.length > 8 ? 2 : 1}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card title="Situação dos agendamentos" subtitle={`${totals.booked + totals.canceled} no período`}>
+          <SegmentedBar
+            title="Situação dos agendamentos"
+            segments={[
+              { key: "COMPLETED", label: "Atendidos", value: dashboard.statuses.COMPLETED, colorClass: "bg-success" },
+              { key: "CONFIRMED", label: "Confirmados", value: dashboard.statuses.CONFIRMED, colorClass: "bg-chart" },
+              { key: "NO_SHOW", label: "Faltou", value: dashboard.statuses.NO_SHOW, colorClass: "bg-chart-neutral" },
+              { key: "CANCELED", label: "Cancelados", value: dashboard.statuses.CANCELED, colorClass: "bg-danger" },
+            ]}
           />
-        ) : (
-          <p className="text-body-sm text-fg-muted">Nenhum agendamento no período.</p>
-        )}
-      </Card>
+        </Card>
+
+        <Card title="Faturamento por serviço">
+          <BarList
+            title="Faturamento por serviço"
+            empty="Nenhum faturamento no período."
+            items={dashboard.byService.map((item) => ({ ...item, display: formatBRL(item.value) }))}
+          />
+        </Card>
+
+        <Card title="Agendamentos por profissional">
+          <BarList
+            title="Agendamentos por profissional"
+            empty="Nenhum agendamento no período."
+            items={dashboard.byProfessional.map((item) => ({ ...item, display: String(item.value) }))}
+          />
+        </Card>
+
+        <Card title="Horários de pico" subtitle="Hora de início dos agendamentos, no fuso da barbearia.">
+          {dashboard.byHour.length ? (
+            <ColumnChart
+              title="Agendamentos por hora de início"
+              columns={hourColumns(dashboard)}
+              unit="agendamentos"
+              axisEvery={dashboard.byHour.length > 8 ? 2 : 1}
+            />
+          ) : (
+            <p className="text-body-sm text-fg-muted">Nenhum agendamento no período.</p>
+          )}
+        </Card>
+      </div>
       <p className="text-body-sm text-fg-muted">Clientes atendidos ou marcados no período: {totals.customers}</p>
     </>
   );
@@ -219,7 +221,7 @@ function DashboardSkeleton() {
     <div className="flex flex-col gap-4" aria-busy>
       <div className="h-[52px] animate-pulse rounded-full bg-surface" />
       <div className="h-[110px] animate-pulse rounded-xl bg-surface" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-[104px] animate-pulse rounded-xl bg-surface" />
         ))}
